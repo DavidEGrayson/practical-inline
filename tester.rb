@@ -74,7 +74,7 @@ def construct_script(script_type, inlining_type, compiler, language, optimizatio
       file1 << "#{inlining_type.prototype_qualifiers} int foo();\n"
     end
     file1 << "#{inlining_type.qualifiers} int foo() { return 1; }\n"
-    file1 << 'void file2(void);'
+    file1 << "void file2(void);\n"
     file1 << "#include <stdio.h>\n"
     file1 << "int main() {\n"
     file1 << '  printf("%d\n", foo());' + "\n"
@@ -123,10 +123,9 @@ def construct_script(script_type, inlining_type, compiler, language, optimizatio
 end
 
 def result_has_compiler_error?(result, file, line_number)
-  stderr = result[1]
-  stderr.split("\n").any? do |line|
-    #line.match?(/\A#{file}(.c|.cpp|):#{line}(:\d+): error:/)
-    regex = /\A#{file}.*\:#{line_number}.*\: error\:/
+  stdout, stderr, code = result
+  stderr.each_line.any? do |line|
+    regex = /\A#{file}(.c|.cpp|):#{line_number}(:\d+): error:/
     line.match?(regex)
   end
 end
@@ -135,6 +134,47 @@ def expect_compiler_error(result, file, line_number)
   if !result_has_compiler_error?(result, file, line_number)
     raise "Expected a compiler error in #{file} at line #{line_number}, " \
           "but did not find one."
+  end
+end
+
+def result_has_multiple_definition_error?(result, symbol)
+  stdout, stderr, code = result
+  stderr.each_line.any? do |line|
+    regex = /multiple definition .*#{symbol}/
+    line.match?(regex)
+  end
+end
+
+def expect_multiple_definition_error(result, symbol)
+  if !result_has_multiple_definition_error?(result, symbol)
+    raise "Expected a multiple definition error for #{symbol}."
+  end
+end
+
+def result_has_undefined_reference_error?(result, symbol)
+  stdout, stderr, code = result
+  stderr.each_line.any? do |line|
+    regex = /undefined reference .*#{symbol}/
+    line.match?(regex)
+  end
+end
+
+def expect_undefined_reference_error(result, symbol)
+  if !result_has_undefined_reference_error?(result, symbol)
+    raise "Expected a undefined reference error for #{symbol}."
+  end
+end
+
+def expect_success(result, expected_stdout)
+  stdout, stderr, code = result
+
+  if code != 0
+    raise "Expected exit code 0, got #{code}"
+  end
+
+  if stdout != expected_stdout
+    raise "Standard output is different from expected: " \
+          "#{expected_stdout.inspect} #{stdout.inspect}"
   end
 end
 
@@ -153,7 +193,12 @@ def test_inlining(specs)
   when behavior[:inline_not_supported]
     expect_compiler_error(result, 'file1', 1)
     expect_compiler_error(result, 'file2', 1)
-  else raise NotImplementedError
+  when behavior[:multiple_definition_error]
+    expect_multiple_definition_error(result, 'foo')
+  when behavior[:undefined_reference_error]
+    expect_undefined_reference_error(result, 'foo')
+  else
+    expect_success(result, "1\n2\n")
   end
 
 rescue

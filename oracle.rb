@@ -5,8 +5,14 @@ module InliningOracle
       return { inline_not_supported: true }
     end
 
-    r = {}
+    if language == :gnu89
+      return { multiple_definition_error: true }
+    end
 
-    r
+    if (language == :c99 || language == :gnu99 || language == :c11 || language == :gnu11) && optimization == :'-O0'
+      return { undefined_reference_error: true }
+    end
+
+    return {}
   end
 end
