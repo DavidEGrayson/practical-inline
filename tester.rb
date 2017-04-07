@@ -18,6 +18,13 @@ class InliningType
     r.qualifiers = qualifiers
     r
   end
+
+  def all_qualifiers
+    q = qualifiers.split(' ')
+    q.concat prototype_qualifiers.split(' ') if prototype_qualifiers
+    q.uniq!
+    q
+  end
 end
 
 inlining_types = [
@@ -72,6 +79,8 @@ def construct_script(script_type, inlining_type, compiler, language, optimizatio
     file1 = ''
     if inlining_type.use_prototype?
       file1 << "#{inlining_type.prototype_qualifiers} int foo();\n"
+    else
+      file << "\n"
     end
     file1 << "#{inlining_type.qualifiers} int foo() { return 1; }\n"
     file1 << "void file2(void);\n"
@@ -117,20 +126,22 @@ def construct_script(script_type, inlining_type, compiler, language, optimizatio
     raise 'unknown compiler'
   end
 
-  script << "#{compiler_exe} #{cflags} file1.c file2.c -o test\n"
+  script << "#{compiler_exe} #{cflags} " \
+            "file1#{source_ext} file2#{source_ext} -o test\n"
   script << "./test\n"
   script
 end
 
-def result_has_compiler_error?(result, file, line_number)
+def result_has_compiler_error?(result, file, line_number = nil)
   stdout, stderr, code = result
+  line_number ||= '\d+'
   stderr.each_line.any? do |line|
     regex = /\A#{file}(.c|.cpp|):#{line_number}(:\d+): error:/
     line.match?(regex)
   end
 end
 
-def expect_compiler_error(result, file, line_number)
+def expect_compiler_error(result, file, line_number = nil)
   if !result_has_compiler_error?(result, file, line_number)
     raise "Expected a compiler error in #{file} at line #{line_number}, " \
           "but did not find one."
@@ -184,20 +195,24 @@ def print_with_indent(io, string, indent)
   end
 end
 
-def test_inlining(specs)
+def test_inlining(specs, case_count)
   behavior = InliningOracle.inline_behavior(*specs)
+
+  puts "test_inlining #{case_count}, #{behavior.inspect}"
 
   script = construct_script(:call_in_two_files, *specs)
   result = run_script(script)
   case
   when behavior[:inline_not_supported]
-    expect_compiler_error(result, 'file1', 1)
-    expect_compiler_error(result, 'file2', 1)
+    expect_compiler_error(result, 'file1')
+    expect_compiler_error(result, 'file2')
   when behavior[:multiple_definition_error]
     expect_multiple_definition_error(result, 'foo')
   when behavior[:undefined_reference_error]
     expect_undefined_reference_error(result, 'foo')
-  else
+  when behavior[:link_once]
+    expect_success(result, "1\n1\n")
+  when behavior[:use_inline_def]
     expect_success(result, "1\n2\n")
   end
 
@@ -220,12 +235,14 @@ rescue
   raise
 end
 
+case_count = 0
 inlining_types.each do |inlining_type|
   compilers.each do |compiler|
     languages.each do |language|
       optimizations.each do |optimization|
         specs = [inlining_type, compiler, language, optimization]
-        test_inlining(specs)
+        case_count += 1
+        test_inlining(specs, case_count)
       end
     end
   end
