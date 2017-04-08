@@ -2,6 +2,7 @@ module InliningOracle
   def self.inline_behavior(inlining_type, compiler, language, optimization)
     no_optimization = optimization == :'-O0'
     cpp = language.to_s.include?('++')
+    static = inlining_type.all_qualifiers.include?('static')
     extern_inline = inlining_type.qualifiers.include?('extern inline') ||
                     inlining_type.prototype_qualifiers.include?('extern inline')
     inline_keyword = inlining_type.all_qualifiers.include?('inline')
@@ -9,13 +10,17 @@ module InliningOracle
     gnu_inline = inlining_type.all_qualifiers.include?('__attribute__((gnu_inline))')
     always_inline = inlining_type.all_qualifiers.include?('__attribute__((always_inline))')
 
-    if !inline_specified
-      return { multiple_definition_error: true }
-    end
-
     if language == :c89 && inline_keyword
       # C89/C90 does not support the inline keyword.
       return { inline_not_supported: true }
+    end
+
+    if static
+      return { use_inline_def: true }
+    end
+
+    if !inline_specified
+      return { multiple_definition_error: true }
     end
 
     if language == :c89 || language == :gnu89
@@ -25,9 +30,6 @@ module InliningOracle
         else
           return { use_inline_def: true }
         end
-      end
-      if gnu_inline
-        return { multiple_definition_error: true }
       end
       return { multiple_definition_error: true }
     end

@@ -31,6 +31,9 @@ inlining_types = [
   InliningType[''],
   InliningType['inline'],
   InliningType['__inline__'],
+  InliningType['static'],
+  InliningType['static inline'],
+  InliningType['static __inline__'],
   InliningType['extern inline'],
   InliningType['extern', 'inline'],
   InliningType['__attribute__((gnu_inline))'],
@@ -205,10 +208,10 @@ def print_with_indent(io, string, indent)
   end
 end
 
-def test_inlining(specs, case_count)
+def test_inlining(specs, case_number)
   behavior = InliningOracle.inline_behavior(*specs)
 
-  puts "test_inlining #{case_count}, #{behavior.inspect}"
+  puts "test_inlining #{case_number}, #{behavior.inspect}"
 
   script = construct_script(:call_in_two_files, *specs)
   result = run_script(script)
@@ -242,20 +245,21 @@ rescue
     $stderr.puts "  result stderr:"
     print_with_indent($stderr, result[1], '    ')
     $stderr.puts "  result code: #{result[2]}"
+    $stderr.puts "  case number: #{case_number}"
   end
   raise
 end
 
-total_case_count = inlining_types.size * compilers.size * languages.size * optimizations.size
-puts "Planning to test #{total_case_count} cases."
-case_count = 0
+case_count = inlining_types.size * compilers.size * languages.size * optimizations.size
+puts "Planning to test #{case_count} cases."
+case_number = 0
 inlining_types.each do |inlining_type|
   compilers.each do |compiler|
     languages.each do |language|
       optimizations.each do |optimization|
         specs = [inlining_type, compiler, language, optimization]
-        case_count += 1
-        test_inlining(specs, case_count)
+        case_number += 1
+        test_inlining(specs, case_number)
       end
     end
   end
