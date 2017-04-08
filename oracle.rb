@@ -9,8 +9,12 @@ module InliningOracle
     inline_prototype = !(['inline', '__inline__'] & inlining_type.prototype_qualifiers.split(' ')).empty?
     inline_definition = !(['inline', '__inline__'] & inlining_type.qualifiers.split(' ')).empty?
     inline_specified = inline_prototype || inline_definition
-    gnu_inline = inlining_type.all_qualifiers.include?('__attribute__((gnu_inline))')
-    always_inline = inlining_type.all_qualifiers.include?('__attribute__((always_inline))')
+    gnu_inline_prototype = inlining_type.prototype_qualifiers.split(' ').include?('__attribute__((gnu_inline))')
+    gnu_inline_definition = inlining_type.qualifiers.split(' ').include?('__attribute__((gnu_inline))')
+    gnu_inline = gnu_inline_prototype || gnu_inline_definition
+    always_inline_prototype = inlining_type.prototype_qualifiers.split(' ').include?('__attribute__((always_inline))')
+    always_inline_definition = inlining_type.qualifiers.split(' ').include?('__attribute__((always_inline))')
+    always_inline = always_inline_prototype || always_inline_definition
     duplicate_inline =
       (inlining_type.prototype_qualifiers.split(' ').include?('inline') &&
        inlining_type.prototype_qualifiers.split(' ').include?('__inline__')) ||
@@ -28,11 +32,11 @@ module InliningOracle
 
     warnings = []
 
-    if !inline_specified && gnu_inline
+    if (!inline_prototype && gnu_inline_prototype)
       warnings << :gnu_inline_ignored
     end
 
-    if !inline_specified && always_inline
+    if (!inline_prototype && always_inline_prototype)
       warnings << :always_inline_ignored
     end
 

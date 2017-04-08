@@ -51,6 +51,7 @@ def generate_test_domain(minimal)
       InliningType['extern', 'inline'],
       InliningType['__attribute__((gnu_inline))'],
       InliningType['inline __attribute__((gnu_inline))'],
+      InliningType['__attribute__((gnu_inline))', 'inline __attribute__((gnu_inline))'],
       InliningType['extern __attribute__((gnu_inline))'],
       InliningType['extern inline __attribute__((gnu_inline))'],
       InliningType['static __attribute__((gnu_inline))'],
@@ -373,10 +374,10 @@ inlining_types, compilers, languages, optimizations = generate_test_domain(minim
 case_count = inlining_types.size * compilers.size * languages.size * optimizations.size
 puts "Planning to test #{case_count} cases."
 case_number = 0
-inlining_types.each do |inlining_type|
-  compilers.each do |compiler|
-    languages.each do |language|
-      optimizations.each do |optimization|
+optimizations.each do |optimization|
+  inlining_types.each do |inlining_type|
+    compilers.each do |compiler|
+      languages.each do |language|
         specs = [inlining_type, compiler, language, optimization]
         case_number += 1
         test_inlining(specs, case_number)
