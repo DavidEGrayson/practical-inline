@@ -7,6 +7,7 @@ module InliningOracle
                     inlining_type.prototype_qualifiers.include?('extern inline')
     inline_keyword = inlining_type.all_qualifiers.include?('inline')
     inline_specified = !(['inline', '__inline__'] & inlining_type.all_qualifiers).empty?
+    inline_prototype = !(['inline', '__inline__'] & inlining_type.prototype_qualifiers.split(' ')).empty?
     gnu_inline = inlining_type.all_qualifiers.include?('__attribute__((gnu_inline))')
     always_inline = inlining_type.all_qualifiers.include?('__attribute__((always_inline))')
     duplicate_inline =
@@ -38,7 +39,7 @@ module InliningOracle
       return { use_inline_def: true, warnings: warnings }
     end
 
-    if !inline_specified
+    if !inline_specified || (!cpp && !inline_prototype)
       return { multiple_definition_error: true, warnings: warnings }
     end
 

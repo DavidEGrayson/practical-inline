@@ -1,3 +1,5 @@
+# TODO: test -fgnu89-inline
+
 require_relative 'oracle'
 require 'pathname'
 require 'fileutils'
@@ -38,6 +40,7 @@ def generate_test_domain(minimal)
     inlining_types = [
       InliningType[''],
       InliningType['inline'],
+      InliningType['', 'inline'],
       InliningType['__inline__'],
       InliningType['inline __inline__'],
       InliningType['static'],
