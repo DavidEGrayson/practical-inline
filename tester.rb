@@ -85,12 +85,12 @@ def generate_test_domain(minimal)
     # qualifiers).  We'll probably find bugs faster that way since
     # most bugs will be caused by the interaction of 1 or 2
     # qualifiers.
-    indices.sort_by do |n|
+    indices = indices.sort_by do |n|
       popcount = n.to_s(2).count('1')
       [popcount, n]
     end
 
-    (0...(1 << bits)).each do |n|
+    indices.each do |n|
       prototype_qualifiers = []
       qualifiers = []
       qualifier_universe.each do |qualifier|
