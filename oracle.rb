@@ -6,8 +6,7 @@ module InliningOracle
     static_definition = !(['static'] & inlining_type.qualifiers.split(' ')).empty?
     static = static_prototype || static_definition
     extern_prototype = inlining_type.prototype_qualifiers.split(' ').include?('extern')
-    extern_inline = inlining_type.qualifiers.include?('extern inline') ||
-                    inlining_type.prototype_qualifiers.include?('extern inline')
+    extern_definition = inlining_type.qualifiers.split(' ').include?('extern')
     inline_keyword = inlining_type.all_qualifiers.include?('inline')
     inline_prototype = !(['inline', '__inline__'] & inlining_type.prototype_qualifiers.split(' ')).empty?
     inline_definition = !(['inline', '__inline__'] & inlining_type.qualifiers.split(' ')).empty?
@@ -23,6 +22,8 @@ module InliningOracle
        inlining_type.prototype_qualifiers.split(' ').include?('__inline__')) ||
       (inlining_type.qualifiers.split(' ').include?('inline') &&
        inlining_type.qualifiers.split(' ').include?('__inline__'))
+    extern_inline = extern_prototype && inline_prototype && extern_definition && inline_definition
+
 
     #return {skip: true} unless !static_prototype && static_definition # tmphax
 
