@@ -24,13 +24,15 @@ module InliningOracle
       (inlining_type.qualifiers.split(' ').include?('inline') &&
        inlining_type.qualifiers.split(' ').include?('__inline__'))
 
+    #return {skip: true} unless !static_prototype && static_definition # tmphax
+
     warnings = []
 
     if (!inline_prototype && gnu_inline_prototype) || (!inline_definition && gnu_inline_definition)
       warnings << :gnu_inline_ignored
     end
 
-    if !inline_prototype && always_inline_prototype || (!inline_definition && always_inline_definition)
+    if (!inline_prototype && always_inline_prototype) || (!inline_definition && always_inline_definition)
       warnings << :always_inline_ignored
     end
 
@@ -39,13 +41,16 @@ module InliningOracle
       return { inline_not_supported: true, warnings: warnings }
     end
 
-    if !static_prototype && static_definition
+    if !static_prototype && static_definition && [:c99, :gnu99, :c11, :gnu11].include?(language)
+      # TODO: handle this differently, it's just a warning, and this condition is messy
+      warnings << :inline_never_defined
+    end
+
+    if !static_prototype && static_definition &&
+       !(inline_prototype && !gnu_inline_prototype && [:c99, :gnu99, :c11, :gnu11].include?(language))
       style = true
       if cpp
         style = :extern
-      elsif (inline_prototype && (inline_definition || [:c99, :gnu99, :c11, :gnu11].include?(language))) && ![:c89, :gnu89].include?(language)
-        # TODO: handle this differently, it's just a warning, and this condition is messy
-        style = :inline_never_defined
       end
       return { static_inconsistent_error: style, warnings: warnings }
     end

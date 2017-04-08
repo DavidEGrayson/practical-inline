@@ -316,6 +316,8 @@ end
 def test_inlining(specs, case_number)
   behavior = InliningOracle.inline_behavior(*specs)
 
+  return if behavior[:skip]
+
   puts "test_inlining %6s, %s, %s" % [case_number, specs_summary(specs), behavior.inspect]
 
   script = construct_script(:call_in_two_files, *specs)
@@ -333,10 +335,6 @@ def test_inlining(specs, case_number)
     when :extern
       expect_compiler_error(result, 'file1', /was declared .extern. and later .static./)
       expect_compiler_error(result, 'file2', /was declared .extern. and later .static./)
-    when :inline_never_defined
-      # TODO: this should not be handled like this, it's a warning
-      expect_warning(result, /inline function .* declared but never defined/)
-      expect_success(result, "1\n2\n")
     else
       raise 'unknown style'
     end
@@ -384,6 +382,8 @@ def test_inlining(specs, case_number)
       expect_warning(result, /.*gnu_inline.* attribute_ignored/)
     when :always_inline_ignored
       expect_warning(result, /always_inline function might not be inlinable/)
+    when :inline_never_defined
+      expect_warning(result, /inline function .* declared but never defined/)
     else
       raise "don't know how to look for warning #{warning}"
     end
