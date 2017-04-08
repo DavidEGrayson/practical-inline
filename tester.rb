@@ -48,7 +48,7 @@ languages = %i(
   c89 gnu89 c99 gnu99 c11 gnu11
   c++98 gnu++98 c++11 gnu++11 c++14 gnu++14 c++1z gnu++1z
 )
-optimizations = %i(-O0 -O1 -O2 -O3)
+optimizations = %i(-O0 -O1 -O2 -O3 -Os)
 
 def run_script(script)
   dir = Pathname(Dir.mktmpdir("inline_test"))
