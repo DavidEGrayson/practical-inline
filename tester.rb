@@ -246,6 +246,8 @@ rescue
   raise
 end
 
+total_case_count = inlining_types.size * compilers.size * languages.size * optimizations.size
+puts "Planning to test #{total_case_count} cases."
 case_count = 0
 inlining_types.each do |inlining_type|
   compilers.each do |compiler|

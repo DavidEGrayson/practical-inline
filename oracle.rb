@@ -7,6 +7,7 @@ module InliningOracle
     inline_keyword = inlining_type.all_qualifiers.include?('inline')
     inline_specified = !(['inline', '__inline__'] & inlining_type.all_qualifiers).empty?
     gnu_inline = inlining_type.all_qualifiers.include?('__attribute__((gnu_inline))')
+    always_inline = inlining_type.all_qualifiers.include?('__attribute__((always_inline))')
 
     if !inline_specified
       return { multiple_definition_error: true }
@@ -19,7 +20,7 @@ module InliningOracle
 
     if language == :c89 || language == :gnu89
       if extern_inline
-        if no_optimization
+        if no_optimization && !always_inline
           return { undefined_reference_error: true }
         else
           return { use_inline_def: true }
@@ -34,7 +35,7 @@ module InliningOracle
     if (language == :c99 || language == :gnu99 || \
         language == :c11 || language == :gnu11)
       if extern_inline && gnu_inline
-        if no_optimization
+        if no_optimization && !always_inline
           return { undefined_reference_error: true }
         else
           return { use_inline_def: true }
@@ -49,14 +50,14 @@ module InliningOracle
       if inlining_type.prototype_qualifiers == 'extern'
         return { multiple_definition_error: true }
       end
-      if no_optimization
+      if no_optimization && !always_inline
         return { undefined_reference_error: true }
       else
         return { use_inline_def: true }
       end
     end
 
-    if cpp && no_optimization
+    if cpp && no_optimization && !always_inline
       if gnu_inline
         return { undefined_reference_error: true }
       end
