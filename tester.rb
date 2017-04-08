@@ -41,6 +41,7 @@ def generate_test_domain(minimal)
       InliningType[''],
       InliningType['inline'],
       InliningType['', 'inline'],
+      InliningType['inline', ''],
       InliningType['__inline__'],
       InliningType['inline __inline__'],
       InliningType['static'],
@@ -289,7 +290,7 @@ def inlining_summary(inlining_type)
   end
 
   q_summary = ''
-  inlining_type.prototype_qualifiers.split(' ').each do |q|
+  inlining_type.qualifiers.split(' ').each do |q|
     q_summary << map.fetch(q, q)
   end
 
