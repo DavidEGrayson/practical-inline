@@ -46,21 +46,12 @@ module InliningOracle
       warnings << :inline_never_defined
     end
 
-    if !static_prototype && static_definition &&
-       !(inline_prototype && !gnu_inline_prototype && [:c99, :gnu99, :c11, :gnu11].include?(language))
-      style = true
-      if cpp
-        style = :extern
-      end
-      return { static_inconsistent_error: style, warnings: warnings }
-    end
-
     if duplicate_inline && cpp
       return { duplicate_inline_error: true, warnings: warnings }
     end
 
     if inline_prototype && inline_definition && gnu_inline_prototype != gnu_inline_definition &&
-       !(!static_prototype && static_definition)
+       !(!static_prototype && static_definition && !cpp)
       if cpp
         if gnu_inline_prototype
           style = :redeclared_without
@@ -71,6 +62,15 @@ module InliningOracle
         style = :present
       end
       return { gnu_inline_inconsistent_error: style, warnings: warnings }
+    end
+
+    if !static_prototype && static_definition &&
+       !(inline_prototype && !gnu_inline_prototype && [:c99, :gnu99, :c11, :gnu11].include?(language))
+      style = true
+      if cpp
+        style = :extern
+      end
+      return { static_inconsistent_error: style, warnings: warnings }
     end
 
     if static
