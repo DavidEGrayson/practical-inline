@@ -32,11 +32,11 @@ module InliningOracle
 
     warnings = []
 
-    if (!inline_prototype && gnu_inline_prototype)
+    if (!inline_prototype && gnu_inline_prototype) || (!inline_definition && gnu_inline_definition)
       warnings << :gnu_inline_ignored
     end
 
-    if (!inline_prototype && always_inline_prototype)
+    if !inline_prototype && always_inline_prototype || (!inline_definition && always_inline_definition)
       warnings << :always_inline_ignored
     end
 
@@ -85,7 +85,7 @@ module InliningOracle
     end
 
     if cpp && no_optimization && !always_inline
-      if gnu_inline
+      if inline_definition && gnu_inline_definition
         return { undefined_reference_error: true, warnings: warnings }
       end
       return { link_once: true, warnings: warnings }

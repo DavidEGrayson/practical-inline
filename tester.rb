@@ -52,6 +52,7 @@ def generate_test_domain(minimal)
       InliningType['__attribute__((gnu_inline))'],
       InliningType['inline __attribute__((gnu_inline))'],
       InliningType['__attribute__((gnu_inline))', 'inline __attribute__((gnu_inline))'],
+      InliningType['inline __attribute__((gnu_inline))', '__attribute__((gnu_inline))'],
       InliningType['extern __attribute__((gnu_inline))'],
       InliningType['extern inline __attribute__((gnu_inline))'],
       InliningType['static __attribute__((gnu_inline))'],
