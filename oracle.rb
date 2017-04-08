@@ -59,7 +59,8 @@ module InliningOracle
       return { duplicate_inline_error: true, warnings: warnings }
     end
 
-    if inline_prototype && inline_definition && gnu_inline_prototype != gnu_inline_definition
+    if inline_prototype && inline_definition && gnu_inline_prototype != gnu_inline_definition &&
+       !(!static_prototype && static_definition)
       if cpp
         if gnu_inline_prototype
           style = :redeclared_without

@@ -100,8 +100,6 @@ def generate_test_domain(minimal)
           prototype_qualifiers << qualifier
         end
 
-        # The XOR here makes it so we first test all the cases where
-        # the definition and prototype have the same qualifiers.
         if (bit0 ^ bit1) == 1
           qualifiers << qualifier
         end
@@ -302,7 +300,7 @@ def inlining_summary(inlining_type)
     q_summary << map.fetch(q, q)
   end
 
-  "#{pq_summary};#{q_summary}();"
+  "#{pq_summary};#{q_summary}{};"
 end
 
 def specs_summary(specs)
