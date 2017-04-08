@@ -28,9 +28,9 @@ class InliningType
 end
 
 inlining_types = [
+  InliningType[''],
   InliningType['inline'],
   InliningType['__inline__'],
-
   InliningType['extern inline'],
   InliningType['extern', 'inline'],
   InliningType['__attribute__((gnu_inline))'],
