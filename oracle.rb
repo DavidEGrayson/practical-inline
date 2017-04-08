@@ -22,7 +22,7 @@ module InliningOracle
        inlining_type.prototype_qualifiers.split(' ').include?('__inline__')) ||
       (inlining_type.qualifiers.split(' ').include?('inline') &&
        inlining_type.qualifiers.split(' ').include?('__inline__'))
-    extern_inline = extern_prototype && inline_prototype && extern_definition && inline_definition
+    extern_inline = extern_prototype && extern_definition && inline_definition
 
 
     #return {skip: true} unless !static_prototype && static_definition # tmphax
@@ -78,10 +78,6 @@ module InliningOracle
       return { use_inline_def: true, warnings: warnings }
     end
 
-    if !inline_specified || (!cpp && (!inline_prototype || !inline_definition))
-      return { multiple_definition_error: true, warnings: warnings }
-    end
-
     if language == :c89 || language == :gnu89
       if extern_inline
         if no_optimization && !always_inline
@@ -95,6 +91,9 @@ module InliningOracle
 
     if (language == :c99 || language == :gnu99 || \
         language == :c11 || language == :gnu11)
+      if !inline_prototype || !inline_definition
+        return { multiple_definition_error: true, warnings: warnings }
+      end
       if extern_inline && gnu_inline
         if no_optimization && !always_inline
           return { undefined_reference_error: true, warnings: warnings }
@@ -118,11 +117,17 @@ module InliningOracle
       end
     end
 
-    if cpp && no_optimization && !always_inline
-      if inline_definition && gnu_inline_definition
-        return { undefined_reference_error: true, warnings: warnings }
+    if cpp
+      if !inline_specified
+        return { multiple_definition_error: true, warnings: warnings }
       end
-      return { link_once: true, warnings: warnings }
+
+      if no_optimization && !always_inline
+        if inline_definition && gnu_inline_definition
+          return { undefined_reference_error: true, warnings: warnings }
+        end
+        return { link_once: true, warnings: warnings }
+      end
     end
 
     return { use_inline_def: true, warnings: warnings }
