@@ -2,7 +2,6 @@ module InliningOracle
   def self.inline_behavior(inlining_type, compiler, language, optimization)
     no_optimization = optimization == :'-O0'
     cpp = language.to_s.include?('++')
-    gnu_language = language.to_s.include?('gnu')
     static = inlining_type.all_qualifiers.include?('static')
     extern_inline = inlining_type.qualifiers.include?('extern inline') ||
                     inlining_type.prototype_qualifiers.include?('extern inline')
@@ -21,7 +20,7 @@ module InliningOracle
       return { inline_not_supported: true }
     end
 
-    if duplicate_inline && !(gnu_language && !cpp)
+    if duplicate_inline && (language == :c89 || cpp)
       return { duplicate_inline_error: true }
     end
 
