@@ -24,63 +24,67 @@ module InliningOracle
       return { duplicate_inline_error: true }
     end
 
+    warnings = []
+
+    if !inline_specified && gnu_inline
+      warnings << :gnu_inline_ignored
+    end
+
+    if !inline_specified && always_inline
+      warnings << :always_inline_ignored
+    end
+
     if static
-      return { use_inline_def: true }
+      return { use_inline_def: true, warnings: warnings }
     end
 
     if !inline_specified
-      if gnu_inline
-        return { multiple_definition_error: true, warnings: [:gnu_inline_ignored] }
-      end
-      if always_inline
-        return { multiple_definition_error: true, warnings: [:always_inline_ignored] }
-      end
-      return { multiple_definition_error: true }
+      return { multiple_definition_error: true, warnings: warnings }
     end
 
     if language == :c89 || language == :gnu89
       if extern_inline
         if no_optimization && !always_inline
-          return { undefined_reference_error: true }
+          return { undefined_reference_error: true, warnings: warnings }
         else
-          return { use_inline_def: true }
+          return { use_inline_def: true, warnings: warnings }
         end
       end
-      return { multiple_definition_error: true }
+      return { multiple_definition_error: true, warnings: warnings }
     end
 
     if (language == :c99 || language == :gnu99 || \
         language == :c11 || language == :gnu11)
       if extern_inline && gnu_inline
         if no_optimization && !always_inline
-          return { undefined_reference_error: true }
+          return { undefined_reference_error: true, warnings: warnings }
         else
-          return { use_inline_def: true }
+          return { use_inline_def: true, warnings: warnings }
         end
       end
       if extern_inline
-        return { multiple_definition_error: true }
+        return { multiple_definition_error: true, warnings: warnings }
       end
       if gnu_inline
-        return { multiple_definition_error: true }
+        return { multiple_definition_error: true, warnings: warnings }
       end
       if inlining_type.prototype_qualifiers == 'extern'
-        return { multiple_definition_error: true }
+        return { multiple_definition_error: true, warnings: warnings }
       end
       if no_optimization && !always_inline
-        return { undefined_reference_error: true }
+        return { undefined_reference_error: true, warnings: warnings }
       else
-        return { use_inline_def: true }
+        return { use_inline_def: true, warnings: warnings }
       end
     end
 
     if cpp && no_optimization && !always_inline
       if gnu_inline
-        return { undefined_reference_error: true }
+        return { undefined_reference_error: true, warnings: warnings }
       end
-      return { link_once: true }
+      return { link_once: true, warnings: warnings }
     end
 
-    return { use_inline_def: true }
+    return { use_inline_def: true, warnings: warnings }
   end
 end

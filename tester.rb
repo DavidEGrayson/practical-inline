@@ -49,10 +49,12 @@ def generate_test_domain(minimal)
       InliningType['inline __attribute__((gnu_inline))'],
       InliningType['extern __attribute__((gnu_inline))'],
       InliningType['extern inline __attribute__((gnu_inline))'],
+      InliningType['static __attribute__((gnu_inline))'],
       InliningType['__attribute__((always_inline))'],
       InliningType['inline __attribute__((always_inline))'],
       InliningType['extern __attribute__((always_inline))'],
       InliningType['extern inline __attribute__((always_inline))'],
+      InliningType['static __attribute__((always_inline))'],
     ]
     languages = %i(c89 gnu89 gnu99 gnu++11)
     optimizations = %i(-O0 -O1)
