@@ -27,31 +27,62 @@ class InliningType
   end
 end
 
-inlining_types = [
-  InliningType[''],
-  InliningType['inline'],
-  InliningType['__inline__'],
-  InliningType['static'],
-  InliningType['static inline'],
-  InliningType['static __inline__'],
-  InliningType['extern inline'],
-  InliningType['extern', 'inline'],
-  InliningType['__attribute__((gnu_inline))'],
-  InliningType['inline __attribute__((gnu_inline))'],
-  InliningType['extern __attribute__((gnu_inline))'],
-  InliningType['extern inline __attribute__((gnu_inline))'],
-  InliningType['__attribute__((always_inline))'],
-  InliningType['inline __attribute__((always_inline))'],
-  InliningType['extern __attribute__((always_inline))'],
-  InliningType['extern inline __attribute__((always_inline))'],
-]
+def generate_test_domain(minimal)
+  compilers = %i(gcc)
 
-compilers = %i(gcc)
-languages = %i(
-  c89 gnu89 c99 gnu99 c11 gnu11
-  c++98 gnu++98 c++11 gnu++11 c++14 gnu++14 c++1z gnu++1z
-)
-optimizations = %i(-O0 -O1 -O2 -O3 -Os)
+  if minimal
+    # The minimal set of tests: don't test cases that we think are the
+    # same as other cases.  (e.g. don't bother testing gnu99 if we
+    # already test c99).
+
+    inlining_types = [
+      InliningType[''],
+      InliningType['inline'],
+      InliningType['__inline__'],
+      InliningType['static'],
+      InliningType['static inline'],
+      InliningType['static __inline__'],
+      InliningType['extern inline'],
+      InliningType['extern', 'inline'],
+      InliningType['__attribute__((gnu_inline))'],
+      InliningType['inline __attribute__((gnu_inline))'],
+      InliningType['extern __attribute__((gnu_inline))'],
+      InliningType['extern inline __attribute__((gnu_inline))'],
+      InliningType['__attribute__((always_inline))'],
+      InliningType['inline __attribute__((always_inline))'],
+      InliningType['extern __attribute__((always_inline))'],
+      InliningType['extern inline __attribute__((always_inline))'],
+    ]
+    languages = %i(c89 gnu89 gnu99 gnu++11)
+    optimizations = %i(-O0 -O1)
+  else
+    inlining_types = [
+      InliningType[''],
+      InliningType['inline'],
+      InliningType['__inline__'],
+      InliningType['static'],
+      InliningType['static inline'],
+      InliningType['static __inline__'],
+      InliningType['extern inline'],
+      InliningType['extern', 'inline'],
+      InliningType['__attribute__((gnu_inline))'],
+      InliningType['inline __attribute__((gnu_inline))'],
+      InliningType['extern __attribute__((gnu_inline))'],
+      InliningType['extern inline __attribute__((gnu_inline))'],
+      InliningType['__attribute__((always_inline))'],
+      InliningType['inline __attribute__((always_inline))'],
+      InliningType['extern __attribute__((always_inline))'],
+      InliningType['extern inline __attribute__((always_inline))'],
+    ]
+    languages = %i(
+      c89 gnu89 c99 gnu99 c11 gnu11
+      c++98 gnu++98 c++11 gnu++11 c++14 gnu++14 c++1z gnu++1z
+    )
+    optimizations = %i(-O0 -O1 -O2 -O3 -Os)
+  end
+
+  [inlining_types, compilers, languages, optimizations]
+end
 
 def run_script(script)
   dir = Pathname(Dir.mktmpdir("inline_test"))
@@ -272,6 +303,8 @@ rescue
   raise
 end
 
+minimal = ARGV.include?('--minimal')
+inlining_types, compilers, languages, optimizations = generate_test_domain(minimal)
 case_count = inlining_types.size * compilers.size * languages.size * optimizations.size
 puts "Planning to test #{case_count} cases."
 case_number = 0
