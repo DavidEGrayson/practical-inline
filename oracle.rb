@@ -20,6 +20,12 @@ module InliningOracle
     end
 
     if !inline_specified
+      if gnu_inline
+        return { multiple_definition_error: true, warnings: [:gnu_inline_ignored] }
+      end
+      if always_inline
+        return { multiple_definition_error: true, warnings: [:always_inline_ignored] }
+      end
       return { multiple_definition_error: true }
     end
 

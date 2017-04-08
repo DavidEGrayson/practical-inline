@@ -179,6 +179,13 @@ def expect_undefined_reference_error(result, symbol)
   end
 end
 
+def expect_warning(result, regex)
+  stdout, stderr, code = result
+  stderr.each_line.any? do |line|
+    line.match(/warning: (.*)/) && $1.match?(regex)
+  end
+end
+
 def expect_no_warnings(result)
   stdout, stderr, code = result
 
@@ -198,8 +205,6 @@ def expect_success(result, expected_stdout)
     raise "Standard output is different from expected: " \
           "#{expected_stdout.inspect} #{stdout.inspect}"
   end
-
-  expect_no_warnings(result)
 end
 
 def print_with_indent(io, string, indent)
@@ -219,15 +224,32 @@ def test_inlining(specs, case_number)
   when behavior[:inline_not_supported]
     expect_compiler_error(result, 'file1')
     expect_compiler_error(result, 'file2')
+    unspecified_warnings_possible = true
   when behavior[:multiple_definition_error]
     expect_multiple_definition_error(result, 'foo')
   when behavior[:undefined_reference_error]
     expect_undefined_reference_error(result, 'foo')
-    expect_no_warnings(result)
   when behavior[:link_once]
     expect_success(result, "1\n1\n")
   when behavior[:use_inline_def]
     expect_success(result, "1\n2\n")
+  end
+
+  expected_warnings = behavior.fetch(:warnings, [])
+
+  expected_warnings.each do |warning|
+    case warning
+    when :gnu_inline_ignored
+      expect_warning(result, /.*gnu_inline.* attribute_ignored/)
+    when :always_inline_ignored
+      expect_warning(result, /always_inline function might not be inlinable/)
+    else
+      raise "don't know how to look for warning #{warning}"
+    end
+  end
+
+  if expected_warnings.empty? && !unspecified_warnings_possible
+    expect_no_warnings(result)
   end
 
 rescue
