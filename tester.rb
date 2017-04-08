@@ -39,6 +39,7 @@ def generate_test_domain(minimal)
       InliningType[''],
       InliningType['inline'],
       InliningType['__inline__'],
+      InliningType['inline __inline__'],
       InliningType['static'],
       InliningType['static inline'],
       InliningType['static __inline__'],
@@ -170,18 +171,19 @@ def construct_script(script_type, inlining_type, compiler, language, optimizatio
   script
 end
 
-def result_has_compiler_error?(result, file, line_number = nil)
+def result_has_compiler_error?(result, file, regex = nil)
   stdout, stderr, code = result
-  line_number ||= '\d+'
+  line_number = '\d+'
+  regex ||= //
   stderr.each_line.any? do |line|
-    regex = /\A#{file}(.c|.cpp|):#{line_number}(:\d+): error:/
-    line.match?(regex)
+    error_regex = /\A#{file}(.c|.cpp|):#{line_number}(:\d+): error: (.*)/
+    line.match(error_regex) && $3.match?(regex)
   end
 end
 
-def expect_compiler_error(result, file, line_number = nil)
-  if !result_has_compiler_error?(result, file, line_number)
-    raise "Expected a compiler error in #{file} at line #{line_number}, " \
+def expect_compiler_error(result, file, regex = nil)
+  if !result_has_compiler_error?(result, file, regex)
+    raise "Expected a compiler error in #{file} (#{regex.inspect}), " \
           "but did not find one."
   end
 end
@@ -260,6 +262,9 @@ def test_inlining(specs, case_number)
     expect_compiler_error(result, 'file1')
     expect_compiler_error(result, 'file2')
     unspecified_warnings_possible = true
+  when behavior[:duplicate_inline_error]
+    expect_compiler_error(result, 'file1', /duplicate .*inline.*/)
+    expect_compiler_error(result, 'file2', /duplicate .*inline.*/)
   when behavior[:multiple_definition_error]
     expect_multiple_definition_error(result, 'foo')
   when behavior[:undefined_reference_error]
@@ -268,6 +273,8 @@ def test_inlining(specs, case_number)
     expect_success(result, "1\n1\n")
   when behavior[:use_inline_def]
     expect_success(result, "1\n2\n")
+  else
+    raise "unknown top-level behavior"
   end
 
   expected_warnings = behavior.fetch(:warnings, [])
