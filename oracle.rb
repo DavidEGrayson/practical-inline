@@ -21,15 +21,6 @@ module InliningOracle
       (inlining_type.qualifiers.split(' ').include?('inline') &&
        inlining_type.qualifiers.split(' ').include?('__inline__'))
 
-    if language == :c89 && inline_keyword
-      # C89/C90 does not support the inline keyword.
-      return { inline_not_supported: true }
-    end
-
-    if duplicate_inline && cpp
-      return { duplicate_inline_error: true }
-    end
-
     warnings = []
 
     if (!inline_prototype && gnu_inline_prototype) || (!inline_definition && gnu_inline_definition)
@@ -38,6 +29,23 @@ module InliningOracle
 
     if !inline_prototype && always_inline_prototype || (!inline_definition && always_inline_definition)
       warnings << :always_inline_ignored
+    end
+
+    if language == :c89 && inline_keyword
+      # C89/C90 does not support the inline keyword.
+      return { inline_not_supported: true, warnings: warnings }
+    end
+
+    if duplicate_inline && cpp
+      return { duplicate_inline_error: true, warnings: warnings }
+    end
+
+    if inline_prototype && inline_definition && gnu_inline_prototype != gnu_inline_definition
+      if gnu_inline_prototype || cpp
+        return { gnu_inline_inconsistent_error: :redeclared, warnings: warnings }
+      else
+        return { gnu_inline_inconsistent_error: :present, warnings: warnings }
+      end
     end
 
     if static

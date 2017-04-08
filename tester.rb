@@ -199,6 +199,9 @@ end
 
 def result_has_compiler_error?(result, file, regex = nil)
   stdout, stderr, code = result
+
+  return false if code == 0
+
   line_number = '\d+'
   regex ||= //
   stderr.each_line.any? do |line|
@@ -319,8 +322,25 @@ def test_inlining(specs, case_number)
     expect_compiler_error(result, 'file2')
     unspecified_warnings_possible = true
   when behavior[:duplicate_inline_error]
-    expect_compiler_error(result, 'file1', /duplicate .*inline.*/)
-    expect_compiler_error(result, 'file2', /duplicate .*inline.*/)
+    expect_compiler_error(result, 'file1', /duplicate .inline/)
+    expect_compiler_error(result, 'file2', /duplicate .inline/)
+    unspecified_warnings_possible = true
+  when behavior[:gnu_inline_inconsistent_error]
+    expect_compiler_error(result, 'file1', /gnu_inline/)
+    expect_compiler_error(result, 'file2', /gnu_inline/)
+    unspecified_warnings_possible = true
+    case behavior[:gnu_inline_inconsistent_error]
+    when :present
+      expect_compiler_error(result, 'file1', /.gnu_inline. attribute present/)
+      expect_compiler_error(result, 'file1', /but not here/)
+      expect_compiler_error(result, 'file2', /.gnu_inline. attribute present/)
+      expect_compiler_error(result, 'file2', /but not here/)
+    when :redeclared
+      expect_compiler_error(result, 'file1', /.redeclared inline with .gnu_inline. attribute/)
+      expect_compiler_error(result, 'file2', /.redeclared inline with .gnu_inline. attribute/)
+    else
+      raise
+    end
   when behavior[:multiple_definition_error]
     expect_multiple_definition_error(result, 'foo')
   when behavior[:undefined_reference_error]
@@ -370,6 +390,7 @@ rescue
   raise
 end
 
+skip = ENV.fetch('SKIP', 0).to_i
 minimal = ARGV.include?('--minimal')
 inlining_types, compilers, languages, optimizations = generate_test_domain(minimal)
 case_count = inlining_types.size * compilers.size * languages.size * optimizations.size
@@ -380,8 +401,12 @@ optimizations.each do |optimization|
     compilers.each do |compiler|
       languages.each do |language|
         specs = [inlining_type, compiler, language, optimization]
+        if skip > 0
+          skip -= 1
+        else
+          test_inlining(specs, case_number)
+        end
         case_number += 1
-        test_inlining(specs, case_number)
       end
     end
   end
