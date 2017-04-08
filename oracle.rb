@@ -20,7 +20,7 @@ module InliningOracle
       return { inline_not_supported: true }
     end
 
-    if duplicate_inline && (language == :c89 || cpp)
+    if duplicate_inline && cpp
       return { duplicate_inline_error: true }
     end
 
