@@ -176,6 +176,14 @@ def expect_undefined_reference_error(result, symbol)
   end
 end
 
+def expect_no_warnings(result)
+  stdout, stderr, code = result
+
+  if stderr.include?('warning')
+    raise "Expected no warnings, but stderr had a warning."
+  end
+end
+
 def expect_success(result, expected_stdout)
   stdout, stderr, code = result
 
@@ -187,6 +195,8 @@ def expect_success(result, expected_stdout)
     raise "Standard output is different from expected: " \
           "#{expected_stdout.inspect} #{stdout.inspect}"
   end
+
+  expect_no_warnings(result)
 end
 
 def print_with_indent(io, string, indent)
@@ -210,6 +220,7 @@ def test_inlining(specs, case_count)
     expect_multiple_definition_error(result, 'foo')
   when behavior[:undefined_reference_error]
     expect_undefined_reference_error(result, 'foo')
+    expect_no_warnings(result)
   when behavior[:link_once]
     expect_success(result, "1\n1\n")
   when behavior[:use_inline_def]
