@@ -69,15 +69,33 @@ def generate_test_domain(minimal)
 
     inlining_types = []
     bits = qualifier_universe.size * 2
+    indices = 0...(1 << bits)
+
+    # Put the simpler combinations first (combinations with fewer
+    # qualifiers).  We'll probably find bugs faster that way since
+    # most bugs will be caused by the interaction of 1 or 2
+    # qualifiers.
+    indices.sort_by do |n|
+      popcount = n.to_s(2).count('1')
+      [popcount, n]
+    end
+
     (0...(1 << bits)).each do |n|
       prototype_qualifiers = []
       qualifiers = []
       qualifier_universe.each do |qualifier|
-        bit, n = [n & 1, n >> 1]
-        prototype_qualifiers << qualifier if bit == 1
+        bit0, n = [n & 1, n >> 1]
+        bit1, n = [n & 1, n >> 1]
 
-        bool, n = [n & 1, n >> 1]
-        qualifiers << qualifier if bit == 1
+        if bit0 == 1
+          prototype_qualifiers << qualifier
+        end
+
+        # The XOR here makes it so we first test all the cases where
+        # the definition and prototype have the same qualifiers.
+        if (bit0 ^ bit1) == 1
+          qualifiers << qualifier
+        end
       end
       inlining_types << InliningType[prototype_qualifiers.join(' '), qualifiers.join(' ')]
     end
@@ -252,10 +270,40 @@ def print_with_indent(io, string, indent)
   end
 end
 
+def inlining_summary(inlining_type)
+  map = {
+    'inline' => 'i',
+    '__inline__' => 'I',
+    'extern' => 'e',
+    'static' => 's',
+    '__attribute__((gnu_inline))' => 'g',
+    '__attribute__((always_inline))' => 'a'
+  }
+
+  pq_summary = ''
+  inlining_type.prototype_qualifiers.split(' ').each do |q|
+    pq_summary << map.fetch(q, q)
+  end
+
+  q_summary = ''
+  inlining_type.prototype_qualifiers.split(' ').each do |q|
+    q_summary << map.fetch(q, q)
+  end
+
+  "#{pq_summary};#{q_summary}();"
+end
+
+def specs_summary(specs)
+  inlining_type, compiler, language, optimization = specs
+
+  "%s %-5s %-7s %-3s" %
+    [inlining_summary(inlining_type),
+     compiler, language, optimization]
+end
+
 def test_inlining(specs, case_number)
   behavior = InliningOracle.inline_behavior(*specs)
-
-  puts "test_inlining #{case_number}, #{behavior.inspect}"
+  puts "test_inlining %6s, %s, %s" % [case_number, specs_summary(specs), behavior.inspect]
 
   script = construct_script(:call_in_two_files, *specs)
   result = run_script(script)
