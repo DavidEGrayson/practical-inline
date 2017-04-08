@@ -56,24 +56,28 @@ def generate_test_domain(minimal)
     languages = %i(c89 gnu89 gnu99 gnu++11)
     optimizations = %i(-O0 -O1)
   else
-    inlining_types = [
-      InliningType[''],
-      InliningType['inline'],
-      InliningType['__inline__'],
-      InliningType['static'],
-      InliningType['static inline'],
-      InliningType['static __inline__'],
-      InliningType['extern inline'],
-      InliningType['extern', 'inline'],
-      InliningType['__attribute__((gnu_inline))'],
-      InliningType['inline __attribute__((gnu_inline))'],
-      InliningType['extern __attribute__((gnu_inline))'],
-      InliningType['extern inline __attribute__((gnu_inline))'],
-      InliningType['__attribute__((always_inline))'],
-      InliningType['inline __attribute__((always_inline))'],
-      InliningType['extern __attribute__((always_inline))'],
-      InliningType['extern inline __attribute__((always_inline))'],
-    ]
+    # Test a huge combinatorial explosion.
+
+    qualifier_universe = %w(
+      inline  __inline__
+      __attribute__((gnu_inline)) __attribute__((always_inline))
+      static extern
+    )
+
+    inlining_types = []
+    bits = qualifier_universe.size * 2
+    (0...(1 << bits)).each do |n|
+      prototype_qualifiers = []
+      qualifiers = []
+      qualifier_universe.each do |qualifier|
+        bit, n = [n & 1, n >> 1]
+        prototype_qualifiers << qualifier if bit == 1
+
+        bool, n = [n & 1, n >> 1]
+        qualifiers << qualifier if bit == 1
+      end
+      inlining_types << InliningType[prototype_qualifiers.join(' '), qualifiers.join(' ')]
+    end
     languages = %i(
       c89 gnu89 c99 gnu99 c11 gnu11
       c++98 gnu++98 c++11 gnu++11 c++14 gnu++14 c++1z gnu++1z
