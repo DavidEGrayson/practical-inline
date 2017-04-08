@@ -41,11 +41,17 @@ module InliningOracle
     end
 
     if inline_prototype && inline_definition && gnu_inline_prototype != gnu_inline_definition
-      if gnu_inline_prototype || cpp
-        return { gnu_inline_inconsistent_error: :redeclared, warnings: warnings }
+      #if (gnu_inline_prototype || cpp) && ![:c99, :gnu89].include?(language)
+      if cpp
+        if gnu_inline_prototype
+          style = :redeclared_without
+        else
+          style = :redeclared_with
+        end
       else
-        return { gnu_inline_inconsistent_error: :present, warnings: warnings }
+        style = :present
       end
+      return { gnu_inline_inconsistent_error: style, warnings: warnings }
     end
 
     if static

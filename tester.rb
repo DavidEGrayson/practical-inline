@@ -53,6 +53,8 @@ def generate_test_domain(minimal)
       InliningType['inline __attribute__((gnu_inline))'],
       InliningType['__attribute__((gnu_inline))', 'inline __attribute__((gnu_inline))'],
       InliningType['inline __attribute__((gnu_inline))', '__attribute__((gnu_inline))'],
+      InliningType['inline', 'inline __attribute__((gnu_inline))'],
+      InliningType['inline __attribute__((gnu_inline))', 'inline'],
       InliningType['extern __attribute__((gnu_inline))'],
       InliningType['extern inline __attribute__((gnu_inline))'],
       InliningType['static __attribute__((gnu_inline))'],
@@ -312,6 +314,7 @@ end
 
 def test_inlining(specs, case_number)
   behavior = InliningOracle.inline_behavior(*specs)
+
   puts "test_inlining %6s, %s, %s" % [case_number, specs_summary(specs), behavior.inspect]
 
   script = construct_script(:call_in_two_files, *specs)
@@ -335,9 +338,12 @@ def test_inlining(specs, case_number)
       expect_compiler_error(result, 'file1', /but not here/)
       expect_compiler_error(result, 'file2', /.gnu_inline. attribute present/)
       expect_compiler_error(result, 'file2', /but not here/)
-    when :redeclared
+    when :redeclared_with
       expect_compiler_error(result, 'file1', /.redeclared inline with .gnu_inline. attribute/)
       expect_compiler_error(result, 'file2', /.redeclared inline with .gnu_inline. attribute/)
+    when :redeclared_without
+      expect_compiler_error(result, 'file1', /.redeclared inline without .gnu_inline. attribute/)
+      expect_compiler_error(result, 'file2', /.redeclared inline without .gnu_inline. attribute/)
     else
       raise
     end
