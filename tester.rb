@@ -35,7 +35,7 @@ def generate_test_domain(minimal)
   if minimal
     # The minimal set of tests: don't test cases that we think are the
     # same as other cases.  (e.g. don't bother testing gnu99 if we
-    # already test c99).
+    # already test c99).  TODO: get 100% code coverage of the oracle.
 
     inlining_types = [
       InliningType[''],
@@ -46,6 +46,7 @@ def generate_test_domain(minimal)
       InliningType['inline __inline__'],
       InliningType['static'],
       InliningType['static inline'],
+      InliningType['static', 'inline'],
       InliningType['static __inline__'],
       InliningType['extern inline'],
       InliningType['extern', 'inline'],
@@ -323,6 +324,22 @@ def test_inlining(specs, case_number)
   when behavior[:inline_not_supported]
     expect_compiler_error(result, 'file1')
     expect_compiler_error(result, 'file2')
+    unspecified_warnings_possible = true
+  when behavior[:static_inconsistent_error]
+    case behavior[:static_inconsistent_error]
+    when true
+      expect_compiler_error(result, 'file1', /static declaration .* follows non-static declaration/)
+      expect_compiler_error(result, 'file2', /static declaration .* follows non-static declaration/)
+    when :extern
+      expect_compiler_error(result, 'file1', /was declared .extern. and later .static./)
+      expect_compiler_error(result, 'file2', /was declared .extern. and later .static./)
+    when :inline_never_defined
+      # TODO: this should not be handled like this, it's a warning
+      expect_warning(result, /inline function .* declared but never defined/)
+      expect_success(result, "1\n2\n")
+    else
+      raise 'unknown style'
+    end
     unspecified_warnings_possible = true
   when behavior[:duplicate_inline_error]
     expect_compiler_error(result, 'file1', /duplicate .inline/)

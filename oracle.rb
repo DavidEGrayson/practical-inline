@@ -2,7 +2,10 @@ module InliningOracle
   def self.inline_behavior(inlining_type, compiler, language, optimization)
     no_optimization = optimization == :'-O0'
     cpp = language.to_s.include?('++')
-    static = inlining_type.all_qualifiers.include?('static')
+    static_prototype = !(['static'] & inlining_type.prototype_qualifiers.split(' ')).empty?
+    static_definition = !(['static'] & inlining_type.qualifiers.split(' ')).empty?
+    static = static_prototype || static_definition
+    extern_prototype = inlining_type.prototype_qualifiers.split(' ').include?('extern')
     extern_inline = inlining_type.qualifiers.include?('extern inline') ||
                     inlining_type.prototype_qualifiers.include?('extern inline')
     inline_keyword = inlining_type.all_qualifiers.include?('inline')
@@ -34,6 +37,17 @@ module InliningOracle
     if language == :c89 && inline_keyword
       # C89/C90 does not support the inline keyword.
       return { inline_not_supported: true, warnings: warnings }
+    end
+
+    if !static_prototype && static_definition
+      style = true
+      if cpp
+        style = :extern
+      elsif (inline_prototype && (inline_definition || [:c99, :gnu99, :c11, :gnu11].include?(language))) && ![:c89, :gnu89].include?(language)
+        # TODO: handle this differently, it's just a warning, and this condition is messy
+        style = :inline_never_defined
+      end
+      return { static_inconsistent_error: style, warnings: warnings }
     end
 
     if duplicate_inline && cpp
