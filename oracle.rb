@@ -56,14 +56,8 @@ module InliningOracle
       return { gnu_inline_inconsistent_error: style, warnings: warnings }
     end
 
-    if !t.static_prototype? && t.static_definition? && (
-       # Weird exception 1
-       !(t.inline_prototype? && !t.extern_prototype? && !t.gnu_inline_prototype? &&
-         [:c99, :gnu99, :c11, :gnu11].include?(language)) &&
-       # Weird exception 2
-       !(t.inline_prototype? && !t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
-         t.inline_definition? && !t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition? &&
-         [:c89, :gnu89].include?(language)) &&
+    if !t.static_prototype? && t.static_definition? &&
+       (!static_mismatch_allowed?(inlining_type, compiler, language)) && (
        # Weird exception 3
        !(t.inline_prototype? && !t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
          !t.inline_definition? && !t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition? &&
@@ -204,5 +198,22 @@ module InliningOracle
     end
 
     return { use_inline_def: true, warnings: warnings }
+  end
+
+  def self.static_mismatch_allowed?(inlining_type, compiler, language)
+    t = inlining_type
+
+    if t.inline_prototype? && !t.extern_prototype? && !t.gnu_inline_prototype? &&
+       [:c99, :gnu99, :c11, :gnu11].include?(language)
+      return true
+    end
+
+    if t.inline_prototype? && !t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
+       t.inline_definition? && !t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition? &&
+       [:c89, :gnu89].include?(language)
+      return true
+    end
+
+    false
   end
 end
