@@ -71,11 +71,34 @@ module InliningOracle
       return { gnu_inline_inconsistent_error: style, warnings: warnings }
     end
 
-    if !static_prototype && static_definition &&
+    if !static_prototype && static_definition && (
+       # Weird exception 1
        !(inline_prototype && !extern_prototype && !gnu_inline_prototype && [:c99, :gnu99, :c11, :gnu11].include?(language)) &&
-      !(inline_prototype && !gnu_inline_prototype && !always_inline_prototype && extern_prototype &&
-        inline_definition && !gnu_inline_definition && !always_inline_definition && !extern_definition &&
-        [:c89, :gnu89].include?(language))
+       # Weird exception 2
+       !(inline_prototype && !gnu_inline_prototype && !always_inline_prototype && extern_prototype &&
+         inline_definition && !gnu_inline_definition && !always_inline_definition && !extern_definition &&
+         [:c89, :gnu89].include?(language)) &&
+       # Weird exception 3
+       !(inline_prototype && !gnu_inline_prototype && !always_inline_prototype && extern_prototype &&
+         !inline_definition && !gnu_inline_definition && !always_inline_definition && !extern_definition &&
+         [:c89, :gnu89].include?(language)) &&
+       # Weird exception 4
+       !(inline_prototype && gnu_inline_prototype && !always_inline_prototype && extern_prototype &&
+         inline_definition && gnu_inline_definition && !always_inline_definition && !extern_definition &&
+         !cpp) &&
+       # Weird exception 5
+       !(inline_prototype && !gnu_inline_prototype && !always_inline_prototype && extern_prototype &&
+         inline_definition && gnu_inline_definition && !always_inline_definition && !extern_definition &&
+         [:c89, :gnu89].include?(language)) &&
+       # Weird exception 6
+       !(inline_prototype && !gnu_inline_prototype && always_inline_prototype && extern_prototype &&
+         inline_definition && !gnu_inline_definition && always_inline_definition && !extern_definition &&
+         [:c89, :gnu89].include?(language)) &&
+       # Weird exception 7
+       !(inline_prototype && !gnu_inline_prototype && !always_inline_prototype && extern_prototype &&
+         inline_definition && !gnu_inline_definition && always_inline_definition && !extern_definition &&
+         [:c89, :gnu89].include?(language))
+      ) then
       style = true
       if cpp
         style = :extern
