@@ -203,15 +203,17 @@ module InliningOracle
   def self.static_mismatch_allowed?(inlining_type, compiler, language)
     t = inlining_type
 
-    if t.inline_prototype? && !t.extern_prototype? && !t.gnu_inline_prototype? &&
-       [:c99, :gnu99, :c11, :gnu11].include?(language)
-      return true
+    if [:c99, :gnu99, :c11, :gnu11].include?(language)
+      if t.inline_prototype? && !t.extern_prototype? && !t.gnu_inline_prototype?
+        return true
+      end
     end
 
-    if t.inline_prototype? && !t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
-       t.inline_definition? && !t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition? &&
-       [:c89, :gnu89].include?(language)
-      return true
+    if [:c89, :gnu89].include?(language)
+      if t.inline_prototype? && !t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
+         t.inline_definition? && !t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition?
+        return true
+      end
     end
 
     false
