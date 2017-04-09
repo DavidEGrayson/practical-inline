@@ -412,7 +412,7 @@ rescue
     $stderr.puts "  result stderr:"
     print_with_indent($stderr, result[1], '    ')
     $stderr.puts "  result code: #{result[2]}"
-    $stderr.puts "  skip code: #{case_number}:#{behavior_hash.hexdigest[0..7]}"
+    $stderr.puts "  skip command: SKIP=#{case_number}:#{behavior_hash.hexdigest[0..7]} ruby tester.rb"
   end
   raise
 end

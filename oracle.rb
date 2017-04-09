@@ -48,8 +48,8 @@ module InliningOracle
       end
     end
 
-    if !static_prototype && static_definition && [:c99, :gnu99, :c11, :gnu11].include?(language)
-      # TODO: handle this differently, it's just a warning, and this condition is messy
+    if !static_prototype && static_definition && \
+       [:c99, :gnu99, :c11, :gnu11].include?(language)
       warnings << :inline_never_defined
     end
 
@@ -72,7 +72,8 @@ module InliningOracle
     end
 
     if !static_prototype && static_definition &&
-       !(inline_prototype && !gnu_inline_prototype && [:c99, :gnu99, :c11, :gnu11].include?(language))
+       !(inline_prototype && !extern_prototype && !gnu_inline_prototype && [:c99, :gnu99, :c11, :gnu11].include?(language)) &&
+       !(inline_prototype && inline_definition && language == :gnu89)
       style = true
       if cpp
         style = :extern
