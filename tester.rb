@@ -439,7 +439,6 @@ optimizations.each do |optimization|
       languages.each do |language|
         specs = [inlining_type, compiler, language, optimization]
         behavior = InliningOracle.inline_behavior(*specs)
-        behavior_hash.update(Marshal.dump(behavior))
         if skip > 0
           skip -= 1
 
@@ -453,6 +452,7 @@ optimizations.each do |optimization|
         else
           test_inlining(specs, case_number, behavior_hash, behavior)
         end
+        behavior_hash.update(Marshal.dump(behavior))
         case_number += 1
       end
     end
