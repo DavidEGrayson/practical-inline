@@ -441,9 +441,11 @@ optimizations.each do |optimization|
         behavior = InliningOracle.inline_behavior(*specs)
         if skip > 0
           skip -= 1
+          behavior_hash.update(Marshal.dump(behavior))
+          case_number += 1
 
           if skip == 0
-            behavior_hash_hex = behavior_hash.hexdigest
+            behavior_hash_hex = behavior_hash.dup.hexdigest
             puts "Hash of skipped behaviors: #{behavior_hash_hex}"
             if !behavior_hash_hex.start_with?(expected_hash_of_skipped)
               raise "does not match expected hash #{expected_hash_of_skipped.inspect} != #{behavior_hash_hex.inspect}"
@@ -451,9 +453,9 @@ optimizations.each do |optimization|
           end
         else
           test_inlining(specs, case_number, behavior_hash, behavior)
+          behavior_hash.update(Marshal.dump(behavior))
+          case_number += 1
         end
-        behavior_hash.update(Marshal.dump(behavior))
-        case_number += 1
       end
     end
   end
