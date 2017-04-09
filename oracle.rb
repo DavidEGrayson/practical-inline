@@ -57,28 +57,7 @@ module InliningOracle
     end
 
     if !t.static_prototype? && t.static_definition? &&
-       (!static_mismatch_allowed?(inlining_type, compiler, language)) && (
-       # Weird exception 4
-       !(t.inline_prototype? && t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
-         t.inline_definition? && t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition? &&
-         !cpp) &&
-       # Weird exception 8
-       !(t.inline_prototype? && t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
-         !t.inline_definition? && t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition? &&
-         !cpp) &&
-       # Weird exception 9
-       !(t.inline_prototype? && t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
-         t.inline_definition? && !t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition? &&
-         !cpp) &&
-       # Weird exception 11
-       !(t.inline_prototype? && t.gnu_inline_prototype? && t.always_inline_prototype? && t.extern_prototype? &&
-         t.inline_definition? && t.gnu_inline_definition? && t.always_inline_definition? && !t.extern_definition? &&
-         !cpp) &&
-       # Weird exception 15
-       !(t.inline_prototype? && t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
-         t.inline_definition? && t.gnu_inline_definition? && t.always_inline_definition? && !t.extern_definition? &&
-         !cpp)
-      ) then
+       !static_mismatch_allowed?(inlining_type, compiler, language)
       style = true
       if cpp
         style = :extern
@@ -161,6 +140,31 @@ module InliningOracle
 
     if [:c99, :gnu99, :c11, :gnu11].include?(language)
       if t.inline_prototype? && !t.extern_prototype? && !t.gnu_inline_prototype?
+        return true
+      end
+
+      if t.inline_prototype? && t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
+         t.inline_definition? && t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition?
+        return true
+      end
+
+      if t.inline_prototype? && t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
+         !t.inline_definition? && t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition?
+        return true
+      end
+
+      if t.inline_prototype? && t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
+         t.inline_definition? && !t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition?
+        return true
+      end
+
+      if t.inline_prototype? && t.gnu_inline_prototype? && t.always_inline_prototype? && t.extern_prototype? &&
+         t.inline_definition? && t.gnu_inline_definition? && t.always_inline_definition? && !t.extern_definition?
+        return true
+      end
+
+      if t.inline_prototype? && t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
+         t.inline_definition? && t.gnu_inline_definition? && t.always_inline_definition? && !t.extern_definition?
         return true
       end
     end
