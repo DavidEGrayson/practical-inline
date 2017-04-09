@@ -58,70 +58,26 @@ module InliningOracle
 
     if !t.static_prototype? && t.static_definition? &&
        (!static_mismatch_allowed?(inlining_type, compiler, language)) && (
-       # Weird exception 3
-       !(t.inline_prototype? && !t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
-         !t.inline_definition? && !t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition? &&
-         [:c89, :gnu89].include?(language)) &&
        # Weird exception 4
        !(t.inline_prototype? && t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
          t.inline_definition? && t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition? &&
          !cpp) &&
-       # Weird exception 5
-       !(t.inline_prototype? && !t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
-         t.inline_definition? && t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition? &&
-         [:c89, :gnu89].include?(language)) &&
-       # Weird exception 6
-       !(t.inline_prototype? && !t.gnu_inline_prototype? && t.always_inline_prototype? && t.extern_prototype? &&
-         t.inline_definition? && !t.gnu_inline_definition? && t.always_inline_definition? && !t.extern_definition? &&
-         [:c89, :gnu89].include?(language)) &&
-       # Weird exception 7
-       !(t.inline_prototype? && !t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
-         t.inline_definition? && !t.gnu_inline_definition? && t.always_inline_definition? && !t.extern_definition? &&
-         [:c89, :gnu89].include?(language)) &&
        # Weird exception 8
        !(t.inline_prototype? && t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
          !t.inline_definition? && t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition? &&
          !cpp) &&
        # Weird exception 9
-       !(t.inline_prototype? && !t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
-         !t.inline_definition? && t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition? &&
-         [:c89, :gnu89].include?(language)) &&
-       # Weird exception 9
        !(t.inline_prototype? && t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
          t.inline_definition? && !t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition? &&
          !cpp) &&
-       # Weird exception 10
-       !(t.inline_prototype? && !t.gnu_inline_prototype? && t.always_inline_prototype? && t.extern_prototype? &&
-         !t.inline_definition? && !t.gnu_inline_definition? && t.always_inline_definition? && !t.extern_definition? &&
-         [:c89, :gnu89].include?(language)) &&
        # Weird exception 11
        !(t.inline_prototype? && t.gnu_inline_prototype? && t.always_inline_prototype? && t.extern_prototype? &&
          t.inline_definition? && t.gnu_inline_definition? && t.always_inline_definition? && !t.extern_definition? &&
          !cpp) &&
-       # Weird exception 12
-       !(t.inline_prototype? && !t.gnu_inline_prototype? && t.always_inline_prototype? && t.extern_prototype? &&
-         t.inline_definition? && t.gnu_inline_definition? && t.always_inline_definition? && !t.extern_definition? &&
-         [:c89, :gnu89].include?(language)) &&
-       # Weird exception 13
-       !(t.inline_prototype? && !t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
-         !t.inline_definition? && !t.gnu_inline_definition? && t.always_inline_definition? && !t.extern_definition? &&
-         [:c89, :gnu89].include?(language)) &&
-       # Weird exception 14
-       !(t.inline_prototype? && t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
-         t.inline_definition? && t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition? &&
-         [:c89, :gnu89].include?(language)) &&
        # Weird exception 15
        !(t.inline_prototype? && t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
          t.inline_definition? && t.gnu_inline_definition? && t.always_inline_definition? && !t.extern_definition? &&
-         !cpp) &&
-       # Weird exception 16
-       !(t.inline_prototype? && !t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
-         t.inline_definition? && t.gnu_inline_definition? && t.always_inline_definition? && !t.extern_definition? &&
-         [:c89, :gnu89].include?(language)) &&
-       # Weird exception 17
-       !(t.inline_prototype? && !t.gnu_inline_prototype? && t.always_inline_prototype? && t.extern_prototype? &&
-         t.inline_definition? && !t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition? &&
-         [:c89, :gnu89].include?(language))
+         !cpp)
       ) then
       style = true
       if cpp
@@ -210,8 +166,7 @@ module InliningOracle
     end
 
     if [:c89, :gnu89].include?(language)
-      if t.inline_prototype? && !t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype? &&
-         t.inline_definition? && !t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition?
+      if t.inline_prototype? && t.extern_prototype?
         return true
       end
     end
