@@ -58,10 +58,7 @@ module InliningOracle
 
     if !t.static_prototype? && t.static_definition? &&
        !static_mismatch_allowed?(inlining_type, compiler, language)
-      style = true
-      if cpp
-        style = :extern
-      end
+      style = cpp ? :extern : true
       return { static_inconsistent_error: style, warnings: warnings }
     end
 
