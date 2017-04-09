@@ -422,6 +422,7 @@ rescue
 end
 
 skip = ENV.fetch('SKIP', 0).to_i
+expected_hash_of_skipped = ENV['SKIP_HASH']
 hash_of_skipped = Digest::SHA256.new
 minimal = ARGV.include?('--minimal')
 inlining_types, compilers, languages, optimizations = generate_test_domain(minimal)
@@ -439,7 +440,11 @@ optimizations.each do |optimization|
           skip -= 1
 
           if skip == 0
-            puts "Hash of skipped behaviors: #{hash_of_skipped.hexdigest}"
+            hash_of_skipped_hex = hash_of_skipped.hexdigest
+            puts "Hash of skipped behaviors: #{hash_of_skipped_hex}"
+            if expected_hash_of_skipped && hash_of_skipped_hex != expected_hash_of_skipped
+              raise "does not match expected hash #{expected_hash_of_skipped.inspect} != #{hash_of_skipped_hex.inspect}"
+            end
           end
         else
           test_inlining(specs, case_number)

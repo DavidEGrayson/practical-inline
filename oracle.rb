@@ -104,6 +104,9 @@ module InliningOracle
       if inline_prototype && gnu_inline_prototype && !extern_prototype
         return { multiple_definition_error: true, warnings: warnings }
       end
+      if !inline_prototype && gnu_inline_prototype && extern_prototype && inline_definition && extern_definition && !gnu_inline_definition
+        return { multiple_definition_error: true, warnings: warnings }
+      end
       if extern_definition && inline_definition && gnu_inline
         if no_optimization && !always_inline
           return { undefined_reference_error: true, warnings: warnings }
