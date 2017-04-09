@@ -98,8 +98,13 @@ module InliningOracle
 
     if (language == :c99 || language == :gnu99 || \
         language == :c11 || language == :gnu11)
-      extern_inline = extern_definition && inline_definition
-      if extern_inline && gnu_inline && !(inline_prototype && gnu_inline_prototype && !extern_prototype)
+      if inline_prototype && extern_prototype && inline_definition && !extern_definition
+        return { multiple_definition_error: true, warnings: warnings }
+      end
+      if inline_prototype && gnu_inline_prototype && !extern_prototype
+        return { multiple_definition_error: true, warnings: warnings }
+      end
+      if extern_definition && inline_definition && gnu_inline
         if no_optimization && !always_inline
           return { undefined_reference_error: true, warnings: warnings }
         else
@@ -109,7 +114,7 @@ module InliningOracle
       if !inline_prototype || !inline_definition
         return { multiple_definition_error: true, warnings: warnings }
       end
-      if extern_inline
+      if extern_definition && inline_definition
         return { multiple_definition_error: true, warnings: warnings }
       end
       if gnu_inline
