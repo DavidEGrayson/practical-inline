@@ -418,9 +418,9 @@ rescue
 end
 
 if ENV['SKIP']
-  if md = ENV['SKIP'].match(/(\d+)(|:[0-9a-f]+)/)
+  if md = ENV['SKIP'].match(/\A(\d+)(|:([0-9a-f]+))\Z/)
     skip = md[1].to_i
-    expected_hash_of_skipped = md[2]
+    expected_hash_of_skipped = md[3]
   else
     raise 'SKIP argument has wrong format'
   end
@@ -446,7 +446,7 @@ optimizations.each do |optimization|
             behavior_hash_hex = behavior_hash.hexdigest
             puts "Hash of skipped behaviors: #{behavior_hash_hex}"
             if !behavior_hash_hex.start_with?(expected_hash_of_skipped)
-              raise "does not match expected hash #{expected_hash_of_skipped.inspect} != #{hash_of_skipped_hex.inspect}"
+              raise "does not match expected hash #{expected_hash_of_skipped.inspect} != #{behavior_hash_hex.inspect}"
             end
           end
         else
