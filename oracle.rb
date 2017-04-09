@@ -97,7 +97,11 @@ module InliningOracle
        # Weird exception 7
        !(inline_prototype && !gnu_inline_prototype && !always_inline_prototype && extern_prototype &&
          inline_definition && !gnu_inline_definition && always_inline_definition && !extern_definition &&
-         [:c89, :gnu89].include?(language))
+         [:c89, :gnu89].include?(language)) &&
+       # Weird exception 8
+       !(inline_prototype && gnu_inline_prototype && !always_inline_prototype && extern_prototype &&
+         !inline_definition && gnu_inline_definition && !always_inline_definition && !extern_definition &&
+         !cpp)
       ) then
       style = true
       if cpp
