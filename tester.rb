@@ -1,34 +1,13 @@
 # TODO: test -fgnu89-inline
 
 require_relative 'oracle'
+require_relative 'inlining_type'
+
 require 'pathname'
 require 'fileutils'
 require 'tmpdir'
 require 'open3'
 require 'digest'
-
-class InliningType
-  attr_accessor :prototype_qualifiers
-  attr_accessor :qualifiers
-
-  def use_prototype?
-    !prototype_qualifiers.nil?
-  end
-
-  def self.[](prototype_qualifiers, qualifiers = prototype_qualifiers)
-    r = new
-    r.prototype_qualifiers = prototype_qualifiers
-    r.qualifiers = qualifiers
-    r
-  end
-
-  def all_qualifiers
-    q = qualifiers.split(' ')
-    q.concat prototype_qualifiers.split(' ') if prototype_qualifiers
-    q.uniq!
-    q
-  end
-end
 
 def generate_test_domain(minimal)
   compilers = %i(gcc)
