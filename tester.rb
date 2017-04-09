@@ -313,11 +313,7 @@ def specs_summary(specs)
      compiler, language, optimization]
 end
 
-def test_inlining(specs, case_number)
-  behavior = InliningOracle.inline_behavior(*specs)
-
-  return if behavior[:skip]
-
+def test_inlining(specs, case_number, behavior_hash, behavior)
   puts "test_inlining %6s, %s, %s" % [case_number, specs_summary(specs), behavior.inspect]
 
   script = construct_script(:call_in_two_files, *specs)
@@ -416,14 +412,21 @@ rescue
     $stderr.puts "  result stderr:"
     print_with_indent($stderr, result[1], '    ')
     $stderr.puts "  result code: #{result[2]}"
-    $stderr.puts "  case number: #{case_number}"
+    $stderr.puts "  skip code: #{case_number}:#{behavior_hash.hexdigest[0..7]}"
   end
   raise
 end
 
-skip = ENV.fetch('SKIP', 0).to_i
-expected_hash_of_skipped = ENV['SKIP_HASH']
-hash_of_skipped = Digest::SHA256.new
+if ENV['SKIP']
+  if md = ENV['SKIP'].match(/(\d+)(|:[0-9a-f]+)/)
+    skip = md[1].to_i
+    expected_hash_of_skipped = md[2]
+  else
+    raise 'SKIP argument has wrong format'
+  end
+end
+
+behavior_hash = Digest::SHA256.new
 minimal = ARGV.include?('--minimal')
 inlining_types, compilers, languages, optimizations = generate_test_domain(minimal)
 case_count = inlining_types.size * compilers.size * languages.size * optimizations.size
@@ -434,20 +437,20 @@ optimizations.each do |optimization|
     compilers.each do |compiler|
       languages.each do |language|
         specs = [inlining_type, compiler, language, optimization]
+        behavior = InliningOracle.inline_behavior(*specs)
+        behavior_hash.update(Marshal.dump(behavior))
         if skip > 0
-          behavior = InliningOracle.inline_behavior(*specs)
-          hash_of_skipped.update(Marshal.dump(behavior))
           skip -= 1
 
           if skip == 0
-            hash_of_skipped_hex = hash_of_skipped.hexdigest
-            puts "Hash of skipped behaviors: #{hash_of_skipped_hex}"
-            if expected_hash_of_skipped && hash_of_skipped_hex != expected_hash_of_skipped
+            behavior_hash_hex = behavior_hash.hexdigest
+            puts "Hash of skipped behaviors: #{behavior_hash_hex}"
+            if !behavior_hash_hex.start_with?(expected_hash_of_skipped)
               raise "does not match expected hash #{expected_hash_of_skipped.inspect} != #{hash_of_skipped_hex.inspect}"
             end
           end
         else
-          test_inlining(specs, case_number)
+          test_inlining(specs, case_number, behavior_hash, behavior)
         end
         case_number += 1
       end
