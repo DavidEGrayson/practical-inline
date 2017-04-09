@@ -150,6 +150,12 @@ module InliningOracle
           return true
         end
       end
+
+      if t.inline_prototype? && t.gnu_inline_prototype? && t.always_inline_prototype? && t.extern_prototype?
+        if t.inline_definition? && !t.gnu_inline_definition? && t.always_inline_definition? && !t.extern_definition?
+          return true
+        end
+      end
     end
 
     if [:c89, :gnu89].include?(language)
