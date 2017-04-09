@@ -71,11 +71,11 @@ module InliningOracle
       return { gnu_inline_inconsistent_error: style, warnings: warnings }
     end
 
-    # !(inline_prototype && inline_definition && !gnu_inline_prototype && !gnu_inline_definition && !always_inline_prototype && !always_inline_definition && [:c89, :gnu89].include?(language)) &&
-
     if !static_prototype && static_definition &&
        !(inline_prototype && !extern_prototype && !gnu_inline_prototype && [:c99, :gnu99, :c11, :gnu11].include?(language)) &&
-       !(inline_prototype && extern_prototype && !gnu_inline_definition && !always_inline_definition && !cpp)
+      !(inline_prototype && !gnu_inline_prototype && !always_inline_prototype && extern_prototype &&
+        inline_definition && !gnu_inline_definition && !always_inline_definition && !extern_definition &&
+        [:c89, :gnu89].include?(language))
       style = true
       if cpp
         style = :extern
