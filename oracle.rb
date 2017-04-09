@@ -85,7 +85,7 @@ module InliningOracle
     end
 
     if language == :c89 || language == :gnu89
-      extern_inline = extern_prototype && extern_definition && inline_definition
+      extern_inline = (extern_prototype || !inline_prototype) && extern_definition && inline_definition
       if extern_inline
         if no_optimization && !always_inline
           return { undefined_reference_error: true, warnings: warnings }
