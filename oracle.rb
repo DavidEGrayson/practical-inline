@@ -136,13 +136,14 @@ module InliningOracle
     t = inlining_type
 
     if [:c99, :gnu99, :c11, :gnu11].include?(language)
-      if t.inline_prototype? && !t.extern_prototype? && !t.gnu_inline_prototype?
+      if t.inline_prototype? && !t.gnu_inline_prototype? && !t.extern_prototype?
         return true
       end
 
-      if t.inline_prototype? && t.gnu_inline_prototype? && !t.always_inline_prototype? &&
-         t.extern_prototype? && !t.extern_definition?
-        return true
+      if t.inline_prototype? && t.gnu_inline_prototype? && !t.always_inline_prototype? && t.extern_prototype?
+        if !t.extern_definition?
+          return true
+        end
       end
 
       if t.inline_prototype? && t.gnu_inline_prototype? && t.always_inline_prototype? && t.extern_prototype?
@@ -159,6 +160,12 @@ module InliningOracle
 
       if t.inline_prototype? && t.gnu_inline_prototype? && t.always_inline_prototype? && t.extern_prototype?
         if !t.gnu_inline_definition? && t.always_inline_definition? && !t.extern_definition?
+          return true
+        end
+      end
+
+      if t.inline_prototype? && t.gnu_inline_prototype? && t.always_inline_prototype? && t.extern_prototype?
+        if t.inline_definition? && !t.gnu_inline_definition? && !t.always_inline_definition? && !t.extern_definition?
           return true
         end
       end
