@@ -22,8 +22,6 @@ module InliningOracle
        inlining_type.prototype_qualifiers.split(' ').include?('__inline__')) ||
       (inlining_type.qualifiers.split(' ').include?('inline') &&
        inlining_type.qualifiers.split(' ').include?('__inline__'))
-    extern_inline = extern_prototype && extern_definition && inline_definition
-
 
     #return {skip: true} unless !static_prototype && static_definition # tmphax
 
@@ -87,6 +85,7 @@ module InliningOracle
     end
 
     if language == :c89 || language == :gnu89
+      extern_inline = extern_prototype && extern_definition && inline_definition
       if extern_inline
         if no_optimization && !always_inline
           return { undefined_reference_error: true, warnings: warnings }
@@ -99,6 +98,7 @@ module InliningOracle
 
     if (language == :c99 || language == :gnu99 || \
         language == :c11 || language == :gnu11)
+      extern_inline = extern_definition && inline_definition
       if !inline_prototype || !inline_definition
         return { multiple_definition_error: true, warnings: warnings }
       end
