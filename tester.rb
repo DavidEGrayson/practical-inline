@@ -342,6 +342,14 @@ def test_inlining(specs, case_number)
     expect_compiler_error(result, 'file1', /duplicate .inline/)
     expect_compiler_error(result, 'file2', /duplicate .inline/)
     unspecified_warnings_possible = true
+  when behavior[:multiple_storage_classes_error]
+    expect_compiler_error(result, 'file1', /multiple storage classes .* declaration/)
+    expect_compiler_error(result, 'file2', /multiple storage classes .* declaration/)
+    unspecified_warnings_possible = true
+  when behavior[:conflicting_specifiers_error]
+    expect_compiler_error(result, 'file1', /conflicting specifiers in declaration/)
+    expect_compiler_error(result, 'file2', /conflicting specifiers in declaration/)
+    unspecified_warnings_possible = true
   when behavior[:gnu_inline_inconsistent_error]
     expect_compiler_error(result, 'file1', /gnu_inline/)
     expect_compiler_error(result, 'file2', /gnu_inline/)

@@ -37,6 +37,14 @@ module InliningOracle
       warnings << :always_inline_ignored
     end
 
+    if (static_prototype && extern_prototype) || (static_definition && extern_definition)
+      if cpp
+        return { conflicting_specifiers_error: true }
+      else
+        return { multiple_storage_classes_error: true }
+      end
+    end
+
     if language == :c89 && inline_keyword
       # C89/C90 does not support the inline keyword.
       return { inline_not_supported: true, warnings: warnings }
