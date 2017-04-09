@@ -5,6 +5,7 @@ require 'pathname'
 require 'fileutils'
 require 'tmpdir'
 require 'open3'
+require 'digest'
 
 class InliningType
   attr_accessor :prototype_qualifiers
@@ -421,6 +422,7 @@ rescue
 end
 
 skip = ENV.fetch('SKIP', 0).to_i
+hash_of_skipped = Digest::SHA256.new
 minimal = ARGV.include?('--minimal')
 inlining_types, compilers, languages, optimizations = generate_test_domain(minimal)
 case_count = inlining_types.size * compilers.size * languages.size * optimizations.size
@@ -432,7 +434,13 @@ optimizations.each do |optimization|
       languages.each do |language|
         specs = [inlining_type, compiler, language, optimization]
         if skip > 0
+          behavior = InliningOracle.inline_behavior(*specs)
+          hash_of_skipped.update(Marshal.dump(behavior))
           skip -= 1
+
+          if skip == 0
+            puts "Hash of skipped behaviors: #{hash_of_skipped.hexdigest}"
+          end
         else
           test_inlining(specs, case_number)
         end
