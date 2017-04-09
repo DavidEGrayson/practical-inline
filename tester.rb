@@ -417,10 +417,11 @@ rescue
   raise
 end
 
+skip = 0
 if ENV['SKIP']
   if md = ENV['SKIP'].match(/\A(\d+)(|:([0-9a-f]+))\Z/)
     skip = md[1].to_i
-    expected_hash_of_skipped = md[3]
+    expected_hash_of_skipped = md[3].to_s
   else
     raise 'SKIP argument has wrong format'
   end
