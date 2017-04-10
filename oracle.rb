@@ -67,7 +67,7 @@ module InliningOracle
       end
     end
 
-    if t.static?
+    if t.static_prototype? || t.static_definition?
       return { use_inline_def: true, warnings: warnings }
     end
 

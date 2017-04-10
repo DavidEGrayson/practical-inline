@@ -28,10 +28,6 @@ class InliningType
     qualifiers.split(' ').include?('static')
   end
 
-  def static?
-    static_prototype? || static_definition?
-  end
-
   def extern_prototype?
     prototype_qualifiers.split(' ').include?('extern')
   end

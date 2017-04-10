@@ -89,6 +89,7 @@ def test_inlining(specs, case_number, behavior_hash, behavior)
       expect_warning(result, /always_inline function might not be inlinable/)
     when :inline_never_defined
       expect_warning(result, /inline function .* declared but never defined/)
+      raise 'cool'
     else
       raise "don't know how to look for warning #{warning}"
     end
