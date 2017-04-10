@@ -8,21 +8,26 @@ module InliningOracle
 
     warnings = []
 
+    # The "__attribute__((gnu_inline))" and "__attribute__((always_inline))"
+    # qualifiers should only be used on a declaration or definition that also
+    # has "inline" or "__inline__", otherwise they will be ignored and you will
+    # get a warning.  Don't use those attributes on their own.
     if (!t.inline_prototype? && t.gnu_inline_prototype?) ||
        (!t.inline_definition? && t.gnu_inline_definition?)
       warnings << :gnu_inline_ignored
     end
-
     if (!t.inline_prototype? && t.always_inline_prototype?) ||
        (!t.inline_definition? && t.always_inline_definition?)
       warnings << :always_inline_ignored
     end
 
+    # The "inline" keyword is not supported in "-std=c89" mode, but "__inline__"
+    # is.  Note that "-std=gnu89" does support "inline".
     if language == :c89 && t.inline_keyword?
-      # C89/C90 does not support the inline keyword.
       return { inline_not_supported: true, warnings: warnings }
     end
 
+    # It is an error to use static and extern together on the same definition or declaration.
     if (t.static_prototype? && t.extern_prototype?) ||
        (t.static_definition? && t.extern_definition?)
       if cpp
@@ -30,11 +35,6 @@ module InliningOracle
       else
         return { multiple_storage_classes_error: true, warnings: warnings }
       end
-    end
-
-    if !t.static_prototype? && t.static_definition? && \
-       [:c99, :gnu99, :c11, :gnu11].include?(language)
-      warnings << :inline_never_defined
     end
 
     if t.duplicate_inline? && cpp
@@ -56,10 +56,15 @@ module InliningOracle
       return { gnu_inline_inconsistent_error: style, warnings: warnings }
     end
 
-    if !t.static_prototype? && t.static_definition? &&
-       !static_mismatch_allowed?(inlining_type, compiler, language)
-      style = cpp ? :extern : true
-      return { static_inconsistent_error: style, warnings: warnings }
+    if !t.static_prototype? && t.static_definition?
+      if [:c99, :gnu99, :c11, :gnu11].include?(language)
+        warnings << :inline_never_defined
+      end
+
+      if !static_mismatch_allowed?(inlining_type, compiler, language)
+        style = cpp ? :extern : true
+        return { static_inconsistent_error: style, warnings: warnings }
+      end
     end
 
     if t.static?
