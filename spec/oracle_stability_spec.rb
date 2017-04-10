@@ -16,6 +16,6 @@ describe 'oracle' do
       behavior_hash.update(Marshal.dump(behavior))
     end
     expect(behavior_hash.hexdigest).to eq \
-      "6b4a4403ffaf34f5c77fcd10ed4e9637fedc367b2af78bf4a8c9debfb0dbb2e9"
+      '6b4a4403ffaf34f5c77fcd10ed4e9637fedc367b2af78bf4a8c9debfb0dbb2e9'
   end
 end
