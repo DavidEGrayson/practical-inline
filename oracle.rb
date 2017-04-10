@@ -9,14 +9,14 @@ module InliningOracle
     warnings = []
 
     # If a declaration or definition has "__attribute__((gnu_inline))" or
-    # "__attribute__((always_inline))" without "inline" or "__inline__", the
-    # attribute will be ignored and there will be a warning.
+    # without "inline" or "__inline__", the attribute will be ignored and there
+    # will be a warning.
     if (!t.inline_prototype? && t.gnu_inline_prototype?) ||
        (!t.inline_definition? && t.gnu_inline_definition?)
       warnings << :gnu_inline_ignored
     end
-    if (!t.inline_prototype? && t.always_inline_prototype?) ||
-       (!t.inline_definition? && t.always_inline_definition?)
+
+    if (!t.inline_definition? && t.always_inline_definition?)
       warnings << :always_inline_ignored
     end
 
@@ -49,8 +49,8 @@ module InliningOracle
     end
 
     # If you use __attribute__((gnu_inline)) for a function, make sure to use it
-    # on every declaration that has "inline" or "__inline".  This usually causes
-    # an error, though there are some cases in C where it does not.
+    # on every declaration that has "inline" or "__inline__".  Failure to do so
+    # usually causes an error.
     if t.inline_prototype? && t.inline_definition? &&
        t.gnu_inline_prototype? != t.gnu_inline_definition? &&
        !(!t.static_prototype? && t.static_definition? && !cpp)
@@ -67,10 +67,9 @@ module InliningOracle
     end
 
     if !t.static_prototype? && t.static_definition?
-      if [:c99, :gnu99, :c11, :gnu11].include?(language)
-        warnings << :inline_never_defined
-      end
-
+      #if [:c99, :gnu99, :c11, :gnu11].include?(language)
+      #  warnings << :inline_never_defined
+      #end
       if !static_mismatch_allowed?(inlining_type, compiler, language)
         style = cpp ? :extern : true
         return { static_inconsistent_error: style, warnings: warnings }

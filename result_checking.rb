@@ -46,10 +46,16 @@ def expect_undefined_reference_error(result, symbol)
   end
 end
 
-def expect_warning(result, regex)
+def result_has_warning?(result, regex)
   stdout, stderr, code = result
   stderr.each_line.any? do |line|
     line.match(/warning: (.*)/) && $1.match?(regex)
+  end
+end
+
+def expect_warning(result, regex)
+  if !result_has_warning?(result, regex)
+    raise "Expected a warning matching #{regex.inspect}, none found."
   end
 end
 

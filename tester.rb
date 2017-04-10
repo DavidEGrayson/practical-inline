@@ -84,12 +84,11 @@ def test_inlining(specs, case_number, behavior_hash, behavior)
   expected_warnings.each do |warning|
     case warning
     when :gnu_inline_ignored
-      expect_warning(result, /.*gnu_inline.* attribute_ignored/)
+      expect_warning(result, /.*gnu_inline.* attribute ignored/)
     when :always_inline_ignored
       expect_warning(result, /always_inline function might not be inlinable/)
     when :inline_never_defined
       expect_warning(result, /inline function .* declared but never defined/)
-      raise 'we are not testing this properly'
     else
       raise "don't know how to look for warning #{warning}"
     end
