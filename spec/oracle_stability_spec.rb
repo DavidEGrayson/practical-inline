@@ -1,8 +1,5 @@
 require 'rspec'
-$LOAD_PATH << File.dirname(__FILE__) + '/..'
-require 'test_domain'
-require 'digest'
-require 'oracle'
+require_relative 'spec_helper'
 
 describe 'oracle' do
   it 'has not changed since we last verified it was correct' do
