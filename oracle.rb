@@ -48,6 +48,9 @@ module InliningOracle
       return { duplicate_inline_error: true, warnings: warnings }
     end
 
+    # If you use __attribute__((gnu_inline)) for a function, make sure to use it
+    # on every declaration that has "inline" or "__inline".  This usually causes
+    # an error, though there are some cases in C where it does not.
     if t.inline_prototype? && t.inline_definition? &&
        t.gnu_inline_prototype? != t.gnu_inline_definition? &&
        !(!t.static_prototype? && t.static_definition? && !cpp)
@@ -78,7 +81,7 @@ module InliningOracle
       return { use_inline_def: true, warnings: warnings }
     end
 
-    if language == :c89 || language == :gnu89
+    if [:c89, :gnu89].include?(language)
       extern_inline = (t.extern_prototype? || !t.inline_prototype?) && t.extern_definition? && t.inline_definition?
       if extern_inline
         if no_optimization && !t.always_inline?
