@@ -1,3 +1,5 @@
+require_relative 'inlining_type'
+
 def generate_test_domain(minimal)
   compilers = %i(gcc)
 
