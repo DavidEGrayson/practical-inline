@@ -77,12 +77,4 @@ class InliningType
   def always_inline?
     always_inline_prototype? || always_inline_definition?
   end
-
-  def duplicate_inline?
-    (prototype_qualifiers.split(' ').include?('inline') &&
-     prototype_qualifiers.split(' ').include?('__inline__')) ||
-      (qualifiers.split(' ').include?('inline') &&
-       qualifiers.split(' ').include?('__inline__'))
-  end
-
 end

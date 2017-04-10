@@ -8,10 +8,9 @@ module InliningOracle
 
     warnings = []
 
-    # The "__attribute__((gnu_inline))" and "__attribute__((always_inline))"
-    # qualifiers should only be used on a declaration or definition that also
-    # has "inline" or "__inline__", otherwise they will be ignored and you will
-    # get a warning.  Don't use those attributes on their own.
+    # If a declaration or definition has "__attribute__((gnu_inline))" or
+    # "__attribute__((always_inline))" without "inline" or "__inline__", the
+    # attribute will be ignored and there will be a warning.
     if (!t.inline_prototype? && t.gnu_inline_prototype?) ||
        (!t.inline_definition? && t.gnu_inline_definition?)
       warnings << :gnu_inline_ignored
@@ -27,7 +26,8 @@ module InliningOracle
       return { inline_not_supported: true, warnings: warnings }
     end
 
-    # It is an error to use static and extern together on the same definition or declaration.
+    # It is an error to use static and extern together on the same definition or
+    # declaration.
     if (t.static_prototype? && t.extern_prototype?) ||
        (t.static_definition? && t.extern_definition?)
       if cpp
@@ -37,7 +37,14 @@ module InliningOracle
       end
     end
 
-    if t.duplicate_inline? && cpp
+    # In C++, it is an error to use both "inline" and "__inline__" on the same
+    # definition or declaration.
+    duplicate_inline =
+      (t.prototype_qualifiers.split(' ').include?('inline') &&
+       t.prototype_qualifiers.split(' ').include?('__inline__')) ||
+       (t.qualifiers.split(' ').include?('inline') &&
+        t.qualifiers.split(' ').include?('__inline__'))
+    if duplicate_inline && cpp
       return { duplicate_inline_error: true, warnings: warnings }
     end
 
