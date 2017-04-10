@@ -85,3 +85,19 @@ def generate_test_domain(minimal)
 
   [inlining_types, compilers, languages, optimizations]
 end
+
+def generate_test_cases(minimal)
+  inlining_types, compilers, languages, optimizations = generate_test_domain(minimal)
+
+  Enumerator.new do |y|
+    optimizations.each do |optimization|
+      inlining_types.each do |inlining_type|
+        compilers.each do |compiler|
+          languages.each do |language|
+            y << [inlining_type, compiler, language, optimization]
+          end
+        end
+      end
+    end
+  end
+end

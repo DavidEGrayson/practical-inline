@@ -6,6 +6,7 @@ require_relative 'test_domain'
 require_relative 'run_script'
 require_relative 'construct_script'
 require_relative 'printing'
+require_relative 'result_checking'
 
 require 'pathname'
 require 'fileutils'
@@ -129,34 +130,27 @@ end
 
 behavior_hash = Digest::SHA256.new
 minimal = ARGV.include?('--minimal')
-inlining_types, compilers, languages, optimizations = generate_test_domain(minimal)
-case_count = inlining_types.size * compilers.size * languages.size * optimizations.size
+cases = generate_test_cases(minimal)
+case_count = cases.count
 puts "Planning to test #{case_count} cases."
 case_number = 0
-optimizations.each do |optimization|
-  inlining_types.each do |inlining_type|
-    compilers.each do |compiler|
-      languages.each do |language|
-        specs = [inlining_type, compiler, language, optimization]
-        behavior = InliningOracle.inline_behavior(*specs)
-        if skip > 0
-          skip -= 1
-          behavior_hash.update(Marshal.dump(behavior))
-          case_number += 1
+cases.each do |specs|
+  behavior = InliningOracle.inline_behavior(*specs)
+  if skip > 0
+    skip -= 1
+    behavior_hash.update(Marshal.dump(behavior))
+    case_number += 1
 
-          if skip == 0
-            behavior_hash_hex = behavior_hash.dup.hexdigest
-            puts "Hash of skipped behaviors: #{behavior_hash_hex}"
-            if !behavior_hash_hex.start_with?(expected_hash_of_skipped)
-              raise "does not match expected hash #{expected_hash_of_skipped.inspect} != #{behavior_hash_hex.inspect}"
-            end
-          end
-        else
-          test_inlining(specs, case_number, behavior_hash, behavior)
-          behavior_hash.update(Marshal.dump(behavior))
-          case_number += 1
-        end
+    if skip == 0
+      behavior_hash_hex = behavior_hash.dup.hexdigest
+      puts "Hash of skipped behaviors: #{behavior_hash_hex}"
+      if !behavior_hash_hex.start_with?(expected_hash_of_skipped)
+        raise "does not match expected hash #{expected_hash_of_skipped.inspect} != #{behavior_hash_hex.inspect}"
       end
     end
+  else
+    test_inlining(specs, case_number, behavior_hash, behavior)
+    behavior_hash.update(Marshal.dump(behavior))
+    case_number += 1
   end
 end
