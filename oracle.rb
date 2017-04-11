@@ -16,11 +16,6 @@ module InliningOracle
       warnings << :gnu_inline_ignored
     end
 
-    if (t.always_inline_prototype? || t.always_inline_definition?) &&
-       !(t.inline_prototype? || t.inline_definition?)
-      warnings << :always_inline_ignored
-    end
-
     # The "inline" keyword is not supported in "-std=c89" mode, but "__inline__"
     # is.  Note that "-std=gnu89" does support "inline".
     if language == :c89 && t.inline_keyword?
@@ -68,14 +63,19 @@ module InliningOracle
     end
 
     if !t.static_prototype? && t.static_definition?
-      if t.inline_prototype? && t.inline_definition? &&
-         [:c99, :gnu99, :c11, :gnu11].include?(language)
-        warnings << :inline_never_defined
-      end
       if !static_mismatch_allowed?(inlining_type, compiler, language)
         style = cpp ? :extern : true
         return { static_inconsistent_error: style, warnings: warnings }
       end
+      if (t.inline_prototype? || t.inline_definition?) &&
+         [:c99, :gnu99, :c11, :gnu11].include?(language)
+        warnings << :inline_never_defined
+      end
+    end
+
+    if (t.always_inline_prototype? || t.always_inline_definition?) &&
+       !(t.inline_prototype? || t.inline_definition?)
+      warnings << :always_inline_ignored
     end
 
     if t.static_prototype? || t.static_definition?
