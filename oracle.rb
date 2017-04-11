@@ -68,9 +68,10 @@ module InliningOracle
     end
 
     if !t.static_prototype? && t.static_definition?
-      #if [:c99, :gnu99, :c11, :gnu11].include?(language)
-      #  warnings << :inline_never_defined
-      #end
+      if t.inline_prototype? && t.inline_definition? &&
+         [:c99, :gnu99, :c11, :gnu11].include?(language)
+        warnings << :inline_never_defined
+      end
       if !static_mismatch_allowed?(inlining_type, compiler, language)
         style = cpp ? :extern : true
         return { static_inconsistent_error: style, warnings: warnings }
