@@ -16,7 +16,9 @@ module InliningOracle
       warnings << :gnu_inline_ignored
     end
 
-    if (!t.inline_definition? && t.always_inline_definition?)
+    if ((!t.inline_prototype? && t.always_inline_prototype?) ||
+        (!t.inline_definition? && t.always_inline_definition?)) &&
+       !(t.inline_prototype? || t.inline_definition?)
       warnings << :always_inline_ignored
     end
 
