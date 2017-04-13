@@ -92,6 +92,14 @@ module InliningOracle
       attrs.always_inline = true
     end
 
+    if qualifiers.include?('static')
+      attrs.static = true
+    end
+
+    if qualifiers.include?('extern')
+      attrs.extern = true
+    end
+
     if parse_fail
       return nil
     end
@@ -116,15 +124,28 @@ module InliningOracle
       :definition, inlining_type.qualifiers.split(' '),
       compiler, language, warnings, errors)
 
-    puts "#{decl_attrs};#{defn_attrs}{}"
-    if ((decl_attrs && decl_attrs.always_inline?) || (defn_attrs && defn_attrs.always_inline?)) &&
-       !((decl_attrs && decl_attrs.inline?) || (defn_attrs && defn_attrs.inline?))
+    attrs_list = [decl_attrs, defn_attrs].compact
+
+    if !(decl_attrs && decl_attrs.static?) && (defn_attrs && defn_attrs.static?)
+      #if !static_mismatch_allowed?(inlining_type, compiler, language)
+      style = cpp ? :extern : true
+      return { static_inconsistent_error: style }.merge(warnings)
+
+      #if (t.inline_prototype? || t.inline_definition?) &&
+      #   [:c99, :gnu99, :c11, :gnu11].include?(language)
+      #  warnings[:inline_never_defined_warning] = true
+      #end
+    end
+
+    if attrs_list.any?(&:always_inline?) && attrs_list.none?(&:inline?)
       warnings[:always_inline_ignored_warning] = true
     end
 
     if errors.size > 0
       return errors.merge(warnings)
     end
+
+    ############################# TODO: fix stuff below this line ################
 
     # If a declaration or definition has "__attribute__((gnu_inline))" or
     # without "inline" or "__inline__", the attribute will be ignored and there
@@ -167,17 +188,6 @@ module InliningOracle
         style = :present
       end
       return { gnu_inline_inconsistent_error: style }.merge(warnings)
-    end
-
-    if !t.static_prototype? && t.static_definition?
-      if !static_mismatch_allowed?(inlining_type, compiler, language)
-        style = cpp ? :extern : true
-        return { static_inconsistent_error: style }.merge(warnings)
-      end
-      if (t.inline_prototype? || t.inline_definition?) &&
-         [:c99, :gnu99, :c11, :gnu11].include?(language)
-        warnings[:inline_never_defined_warning] = true
-      end
     end
 
     if t.static_prototype? || t.static_definition?
