@@ -53,9 +53,12 @@ def result_has_warning?(result, regex)
   end
 end
 
-def expect_warning(result, regex)
-  if !result_has_warning?(result, regex)
+def expect_warning(result, regex, expect = true)
+  if expect && !result_has_warning?(result, regex)
     raise "Expected a warning matching #{regex.inspect}, none found."
+  end
+  if !expect && result_has_warning?(result, regex)
+    raise "Expected no warning matching #{regex.inspect}, but one was found."
   end
 end
 

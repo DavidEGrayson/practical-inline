@@ -1,4 +1,5 @@
 # TODO: test -fgnu89-inline
+# TODO: test -pedantic
 
 require_relative 'oracle'
 require_relative 'inlining_type'
@@ -15,6 +16,28 @@ require 'open3'
 require 'digest'
 
 def test_inlining(specs, case_number, behavior_hash, behavior)
+  known_keys = %i(
+    link_once
+    use_inline_def
+
+    inline_not_supported
+    static_inconsistent_error
+    duplicate_inline_error
+    multiple_storage_classes_error
+    multiple_definition_error
+    undefined_reference_error
+    conflicting_specifiers_error
+    gnu_inline_inconsistent_error
+
+    gnu_inline_ignored_warning
+    always_inline_ignored_warning
+    inline_never_defined_warning
+  )
+  unknown_keys = behavior.keys - known_keys
+  if !unknown_keys.empty?
+    raise "Unknown behavior keys: #{unknown_keys.inspect}"
+  end
+
   puts "test_inlining %6s, %s, %s" % [case_number, specs_summary(specs), behavior.inspect]
 
   script = construct_script(:call_in_two_files, *specs)
@@ -23,7 +46,7 @@ def test_inlining(specs, case_number, behavior_hash, behavior)
   when behavior[:inline_not_supported]
     expect_compiler_error(result, 'file1')
     expect_compiler_error(result, 'file2')
-    unspecified_warnings_possible = true
+    error_expected = true
   when behavior[:static_inconsistent_error]
     case behavior[:static_inconsistent_error]
     when true
@@ -35,23 +58,23 @@ def test_inlining(specs, case_number, behavior_hash, behavior)
     else
       raise 'unknown style'
     end
-    unspecified_warnings_possible = true
+    error_expected = true
   when behavior[:duplicate_inline_error]
     expect_compiler_error(result, 'file1', /duplicate .inline/)
     expect_compiler_error(result, 'file2', /duplicate .inline/)
-    unspecified_warnings_possible = true
+    error_expected = true
   when behavior[:multiple_storage_classes_error]
     expect_compiler_error(result, 'file1', /multiple storage classes .* declaration/)
     expect_compiler_error(result, 'file2', /multiple storage classes .* declaration/)
-    unspecified_warnings_possible = true
+    error_expected = true
   when behavior[:conflicting_specifiers_error]
     expect_compiler_error(result, 'file1', /conflicting specifiers in declaration/)
     expect_compiler_error(result, 'file2', /conflicting specifiers in declaration/)
-    unspecified_warnings_possible = true
+    error_expected = true
   when behavior[:gnu_inline_inconsistent_error]
     expect_compiler_error(result, 'file1', /gnu_inline/)
     expect_compiler_error(result, 'file2', /gnu_inline/)
-    unspecified_warnings_possible = true
+    error_expected = true
     case behavior[:gnu_inline_inconsistent_error]
     when :present
       expect_compiler_error(result, 'file1', /.gnu_inline. attribute present/)
@@ -79,22 +102,29 @@ def test_inlining(specs, case_number, behavior_hash, behavior)
     raise "unknown top-level behavior"
   end
 
-  expected_warnings = behavior.fetch(:warnings, [])
+  # For the warnings that the oracle knows about, make sure we are
+  # correctly modelling them.  That means to make sure they appear if
+  # an only if the oracle says the will, even if there are errors.
+  # We want to know how the warnings really work.
 
-  expected_warnings.each do |warning|
-    case warning
-    when :gnu_inline_ignored
-      expect_warning(result, /.*gnu_inline.* attribute ignored/)
-    when :always_inline_ignored
-      expect_warning(result, /always_inline function might not be inlinable/)
-    when :inline_never_defined
-      expect_warning(result, /inline function .* declared but never defined/)
-    else
-      raise "don't know how to look for warning #{warning}"
-    end
-  end
+  expect_warning(result, /.*gnu_inline.* attribute ignored/,
+    behavior[:gnu_inline_ignored_warning])
+  warning_expected = true if behavior[:gnu_inline_ignored_warning]
 
-  if expected_warnings.empty? && !unspecified_warnings_possible
+  expect_warning(result, /always_inline function might not be inlinable/,
+    behavior[:always_inline_ignored_warning])
+  warning_expected = true if behavior[:always_inline_ignored_warning]
+
+  expect_warning(result, /inline function .* declared but never defined/,
+                 behavior[:inline_never_defined_warning])
+  warning_expected = true if behavior[:inline_never_defined_warning]
+
+  # If there oracle says there are warnings or errors, we don't care
+  # about detecting *all* the warnings and errors produced.  But if
+  # the oracle doesn't report any errors or warnings, we want to say
+  # this is a good scenario for programs to use.  So make sure there
+  # are no warnings whatsoever.
+  if !error_expected && !warning_expected
     expect_no_warnings(result)
   end
 
