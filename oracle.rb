@@ -91,14 +91,10 @@ module InliningOracle
     decl_attrs = process_qualifiers(
       :declaration, inlining_type.prototype_qualifiers.split(' '),
       compiler, language, warnings, errors)
-    if errors.size > 1
-      return errors.merge(warnings)
-    end
-
     defn_attrs = process_qualifiers(
       :definition, inlining_type.qualifiers.split(' '),
       compiler, language, warnings, errors)
-    if errors.size > 1
+    if errors.size > 0
       return errors.merge(warnings)
     end
 
@@ -126,15 +122,6 @@ module InliningOracle
       else
         return { multiple_storage_classes_error: true }.merge(warnings)
       end
-    end
-
-    duplicate_inline =
-      (t.prototype_qualifiers.split(' ').include?('inline') &&
-       t.prototype_qualifiers.split(' ').include?('__inline__')) ||
-       (t.qualifiers.split(' ').include?('inline') &&
-        t.qualifiers.split(' ').include?('__inline__'))
-    if duplicate_inline && cpp
-      return { duplicate_inline_error: true }.merge(warnings)
     end
 
     # If you use __attribute__((gnu_inline)) for a function, make sure to use it
