@@ -1,4 +1,83 @@
 module InliningOracle
+  class FuncAttrs
+    attr_writer :inline, :always_inline, :gnu_inline, :static, :extern
+
+    def initialize
+      @inline = @always_inline = @gnu_inline = @static = @extern = false
+    end
+
+    def ==(other)
+      other.class == FuncAttrs && to_a == other.to_a
+    end
+
+    def eql?(other)
+      self == other
+    end
+
+    def hash
+      to_a.hash
+    end
+
+    def inline?
+      @inline
+    end
+
+    def always_inline?
+      @always_inline
+    end
+
+    def gnu_inline?
+      @gnu_inline
+    end
+
+    def static?
+      @static
+    end
+
+    def extern
+      @extern
+    end
+
+    def to_a
+      r = []
+      r << :inline if inline?
+      r << :always_inline if always_inline?
+      r << :gnu_inline if gnu_inline?
+      r << :static if static?
+      r << :extern if extern?
+      r
+    end
+  end
+
+  def self.process_qualifiers(type, qualifiers, compiler, language, warnings, errors)
+    cpp = language.to_s.include?('++')
+
+    if qualifiers.include?('inline') && language == :c89
+      errors[:inline_not_supported] = true
+    end
+
+    attrs = FuncAttrs.new
+
+    inline_qualifiers = ['__inline__']
+    inline_qualifiers << 'inline' unless language == :c89
+
+    inline_qualifiers_specified = (inline_qualifiers & qualifiers)
+    if inline_qualifiers_specified.size > 1 && cpp
+      errors[:duplicate_inline_error] = true
+    end
+    if inline_qualifiers_specified.size > 0
+      attrs.inline = true
+    end
+
+    if qualifiers.include?('__attribute__((gnu_inline))')
+      if attrs.inline?
+        attrs.gnu_inline = true
+      else
+        warnings[:gnu_inline_ignored_warning] = true
+      end
+    end
+  end
+
   def self.inline_behavior(inlining_type, compiler, language, optimization)
     cpp = language.to_s.include?('++')
     no_optimization = optimization == :'-O0'
@@ -7,6 +86,22 @@ module InliningOracle
     #return {skip: true} unless !static_prototype && static_definition # tmphax
 
     warnings = {}
+    errors = {}
+
+    decl_attrs = process_qualifiers(
+      :declaration, inlining_type.prototype_qualifiers.split(' '),
+      compiler, language, warnings, errors)
+    if errors.size > 1
+      return errors.merge(warnings)
+    end
+
+    defn_attrs = process_qualifiers(
+      :definition, inlining_type.qualifiers.split(' '),
+      compiler, language, warnings, errors)
+    if errors.size > 1
+      return errors.merge(warnings)
+    end
+
 
     # If a declaration or definition has "__attribute__((gnu_inline))" or
     # without "inline" or "__inline__", the attribute will be ignored and there
@@ -33,8 +128,6 @@ module InliningOracle
       end
     end
 
-    # In C++, it is an error to use both "inline" and "__inline__" on the same
-    # definition or declaration.
     duplicate_inline =
       (t.prototype_qualifiers.split(' ').include?('inline') &&
        t.prototype_qualifiers.split(' ').include?('__inline__')) ||
