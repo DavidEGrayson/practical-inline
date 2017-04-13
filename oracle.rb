@@ -34,7 +34,7 @@ module InliningOracle
       @static
     end
 
-    def extern
+    def extern?
       @extern
     end
 
@@ -47,6 +47,16 @@ module InliningOracle
       r << :extern if extern?
       r
     end
+
+    def to_s
+      r = ''
+      r << 'i' if inline?
+      r << 'a' if always_inline?
+      r << 'g' if gnu_inline?
+      r << 's' if static?
+      r << 'e' if extern?
+      r
+    end
   end
 
   def self.process_qualifiers(type, qualifiers, compiler, language, warnings, errors)
@@ -54,6 +64,7 @@ module InliningOracle
 
     if qualifiers.include?('inline') && language == :c89
       errors[:inline_not_supported] = true
+      parse_fail = true
     end
 
     attrs = FuncAttrs.new
@@ -76,6 +87,16 @@ module InliningOracle
         warnings[:gnu_inline_ignored_warning] = true
       end
     end
+
+    if qualifiers.include?('__attribute__((always_inline))')
+      attrs.always_inline = true
+    end
+
+    if parse_fail
+      return nil
+    end
+
+    attrs
   end
 
   def self.inline_behavior(inlining_type, compiler, language, optimization)
@@ -94,10 +115,16 @@ module InliningOracle
     defn_attrs = process_qualifiers(
       :definition, inlining_type.qualifiers.split(' '),
       compiler, language, warnings, errors)
+
+    puts "#{decl_attrs};#{defn_attrs}{}"
+    if ((decl_attrs && decl_attrs.always_inline?) || (defn_attrs && defn_attrs.always_inline?)) &&
+       !((decl_attrs && decl_attrs.inline?) || (defn_attrs && defn_attrs.inline?))
+      warnings[:always_inline_ignored_warning] = true
+    end
+
     if errors.size > 0
       return errors.merge(warnings)
     end
-
 
     # If a declaration or definition has "__attribute__((gnu_inline))" or
     # without "inline" or "__inline__", the attribute will be ignored and there
@@ -151,11 +178,6 @@ module InliningOracle
          [:c99, :gnu99, :c11, :gnu11].include?(language)
         warnings[:inline_never_defined_warning] = true
       end
-    end
-
-    if (t.always_inline_prototype? || t.always_inline_definition?) &&
-       !(t.inline_prototype? || t.inline_definition?)
-      warnings[:always_inline_ignored_warning] = true
     end
 
     if t.static_prototype? || t.static_definition?
