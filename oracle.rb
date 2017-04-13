@@ -124,6 +124,16 @@ module InliningOracle
       :definition, inlining_type.qualifiers.split(' '),
       compiler, language, warnings, errors)
 
+    # This behavior from GCC is really werid, somehow it dissociates the
+    # declaration and definition, and claims it can't find the definition of the
+    # inline function.
+    if [:c99, :gnu99, :c11, :gnu11].include?(language)
+      if decl_attrs && decl_attrs.inline? && !decl_attrs.static? && defn_attrs && defn_attrs.static?
+        warnings[:inline_never_defined_warning] = true
+        defn_attrs = nil
+      end
+    end
+
     attrs_list = [decl_attrs, defn_attrs].compact
 
     if !(decl_attrs && decl_attrs.static?) && (defn_attrs && defn_attrs.static?)
