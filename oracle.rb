@@ -189,7 +189,9 @@ module InliningOracle
         warnings[:always_inline_ignored_warning] = true
       end
     elsif attrs_list.any?(&:always_inline?) && attrs_list.none?(&:inline?)
-      warnings[:always_inline_ignored_warning] = true
+      if !errors[:conflicting_specifiers_error]
+        warnings[:always_inline_ignored_warning] = true
+      end
     end
 
     #if attrs_list.any? { |a| !a.inline? && a.gnu_inline? } &&
