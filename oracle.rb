@@ -205,12 +205,6 @@ module InliningOracle
 
     ############################# TODO: fix stuff below this line ################
 
-    # The "inline" keyword is not supported in "-std=c89" mode, but "__inline__"
-    # is.  Note that "-std=gnu89" does support "inline".
-    if language == :c89 && t.inline_keyword?
-      return { inline_not_supported: true }.merge(warnings)
-    end
-
     if t.static_prototype? || t.static_definition?
       return { use_inline_def: true }.merge(warnings)
     end
