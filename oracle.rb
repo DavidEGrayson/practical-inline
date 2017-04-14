@@ -124,17 +124,6 @@ module InliningOracle
       :definition, inlining_type.qualifiers.split(' '),
       compiler, language, warnings, errors)
 
-    # This behavior from GCC is really werid, somehow it dissociates the
-    # declaration and definition, and claims it can't find the definition of the
-    # inline function.
-    if [:c99, :gnu99, :c11, :gnu11].include?(language)
-      if decl_attrs && decl_attrs.inline? && !decl_attrs.gnu_inline? && !decl_attrs.static? &&
-         defn_attrs && !decl_attrs.gnu_inline? && defn_attrs.static?
-        warnings[:inline_never_defined_warning] = true
-        defn_attrs = nil
-      end
-    end
-
     attrs_list = [decl_attrs, defn_attrs].compact
 
     # If you use __attribute__((gnu_inline)) for a function, make sure to use it
@@ -165,20 +154,36 @@ module InliningOracle
         errors[:multiple_storage_classes_error] = true
       end
     elsif !(decl_attrs && decl_attrs.static?) && (defn_attrs && defn_attrs.static?)
-      #if !static_mismatch_allowed?(inlining_type, compiler, language)
-      style = cpp ? :extern : true
-      errors[:static_inconsistent_error] = style
+      if !static_mismatch_allowed?(inlining_type, compiler, language)
+        style = cpp ? :extern : true
+        errors[:static_inconsistent_error] = style
+      end
 
       #if (t.inline_prototype? || t.inline_definition?) &&
       #   [:c99, :gnu99, :c11, :gnu11].include?(language)
       #  warnings[:inline_never_defined_warning] = true
       #end
 
-      decl_attrs = nil
-      attrs_list = [defn_attrs]
+      # The static function gets disassociated from the declaration.
+      if !cpp
+        disassociated = true
+      end
     end
 
-    if attrs_list.any?(&:always_inline?) && attrs_list.none?(&:inline?)
+    # If the declaration and definition are disassociated, you might get a warning
+    # about the inline function never being defined.
+    if [:c99, :gnu99, :c11, :gnu11].include?(language)
+      if disassociated && decl_attrs && decl_attrs.inline? && !decl_attrs.gnu_inline?
+        warnings[:inline_never_defined_warning] = true
+        defn_attrs = nil
+      end
+    end
+
+    if disassociated
+      if defn_attrs && defn_attrs.always_inline? && !defn_attrs.inline?
+        warnings[:always_inline_ignored_warning] = true
+      end
+    elsif attrs_list.any?(&:always_inline?) && attrs_list.none?(&:inline?)
       warnings[:always_inline_ignored_warning] = true
     end
 
