@@ -209,7 +209,7 @@ module InliningOracle
     if [:c89, :gnu89].include?(language)
       extern_inline = (decl_attrs.extern? || !decl_attrs.inline?) && defn_attrs.extern? && defn_attrs.inline?
       if extern_inline
-        if no_optimization && !t.always_inline?
+        if no_optimization && !(decl_attrs.always_inline? || defn_attrs.always_inline?)
           return { undefined_reference_error: true }.merge(warnings)
         else
           return { use_inline_def: true }.merge(warnings)
