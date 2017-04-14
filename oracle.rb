@@ -140,7 +140,7 @@ module InliningOracle
     if !(decl_attrs && decl_attrs.static?) && (defn_attrs && defn_attrs.static?)
       #if !static_mismatch_allowed?(inlining_type, compiler, language)
       style = cpp ? :extern : true
-      return { static_inconsistent_error: style }.merge(warnings)
+      errors[:static_inconsistent_error] = style
 
       #if (t.inline_prototype? || t.inline_definition?) &&
       #   [:c99, :gnu99, :c11, :gnu11].include?(language)
