@@ -180,7 +180,7 @@ cases.each do |specs|
     end
   else
     test_inlining(specs, case_number, behavior_hash, behavior)
-    behavior_hash.update(Marshal.dump(behavior))
+    behavior_hash.update(Marshal.dump(behavior.sort))
     case_number += 1
   end
 end
