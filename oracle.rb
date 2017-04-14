@@ -206,10 +206,8 @@ module InliningOracle
       return { use_inline_def: true }.merge(warnings)
     end
 
-    ############################# TODO: fix stuff below this line ################
-
     if [:c89, :gnu89].include?(language)
-      extern_inline = (t.extern_prototype? || !t.inline_prototype?) && t.extern_definition? && t.inline_definition?
+      extern_inline = (decl_attrs.extern? || !decl_attrs.inline?) && defn_attrs.extern? && defn_attrs.inline?
       if extern_inline
         if no_optimization && !t.always_inline?
           return { undefined_reference_error: true }.merge(warnings)
@@ -219,6 +217,8 @@ module InliningOracle
       end
       return { multiple_definition_error: true }.merge(warnings)
     end
+
+    ############################# TODO: fix stuff below this line ################
 
     if (language == :c99 || language == :gnu99 || \
         language == :c11 || language == :gnu11)
