@@ -168,7 +168,7 @@ cases.each do |specs|
   behavior = InliningOracle.inline_behavior(*specs)
   if skip > 0
     skip -= 1
-    behavior_hash.update(Marshal.dump(behavior))
+    behavior_hash.update(Marshal.dump(behavior.sort))
     case_number += 1
 
     if skip == 0

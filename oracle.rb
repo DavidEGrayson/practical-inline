@@ -137,7 +137,15 @@ module InliningOracle
 
     attrs_list = [decl_attrs, defn_attrs].compact
 
-    if !(decl_attrs && decl_attrs.static?) && (defn_attrs && defn_attrs.static?)
+    # It is an error to use static and extern together on the same definition or
+    # declaration.
+    if attrs_list.any? { |a| a.static? && a.extern? }
+      if cpp
+        errors[:conflicting_specifiers_error] = true
+      else
+        errors[:multiple_storage_classes_error] = true
+      end
+    elsif !(decl_attrs && decl_attrs.static?) && (defn_attrs && defn_attrs.static?)
       #if !static_mismatch_allowed?(inlining_type, compiler, language)
       style = cpp ? :extern : true
       errors[:static_inconsistent_error] = style
@@ -170,17 +178,6 @@ module InliningOracle
     # is.  Note that "-std=gnu89" does support "inline".
     if language == :c89 && t.inline_keyword?
       return { inline_not_supported: true }.merge(warnings)
-    end
-
-    # It is an error to use static and extern together on the same definition or
-    # declaration.
-    if (t.static_prototype? && t.extern_prototype?) ||
-       (t.static_definition? && t.extern_definition?)
-      if cpp
-        return { conflicting_specifiers_error: true }.merge(warnings)
-      else
-        return { multiple_storage_classes_error: true }.merge(warnings)
-      end
     end
 
     # If you use __attribute__((gnu_inline)) for a function, make sure to use it

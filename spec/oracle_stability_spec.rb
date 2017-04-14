@@ -9,7 +9,7 @@ describe 'oracle' do
     expect(cases.count).to eq 286720
     cases.each do |specs|
       behavior = InliningOracle.inline_behavior(*specs)
-      behavior_hash.update(Marshal.dump(behavior))
+      behavior_hash.update(Marshal.dump(behavior.sort))
     end
     expect(behavior_hash.hexdigest).to eq \
       '6b4a4403ffaf34f5c77fcd10ed4e9637fedc367b2af78bf4a8c9debfb0dbb2e9'
