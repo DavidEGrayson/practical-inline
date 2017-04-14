@@ -128,8 +128,8 @@ module InliningOracle
     # declaration and definition, and claims it can't find the definition of the
     # inline function.
     if [:c99, :gnu99, :c11, :gnu11].include?(language)
-      if decl_attrs && decl_attrs.inline? && !decl_attrs.static? &&
-         defn_attrs && defn_attrs.static?
+      if decl_attrs && decl_attrs.inline? && !decl_attrs.gnu_inline? && !decl_attrs.static? &&
+         defn_attrs && !decl_attrs.gnu_inline? && defn_attrs.static?
         warnings[:inline_never_defined_warning] = true
         defn_attrs = nil
       end
