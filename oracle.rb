@@ -137,6 +137,25 @@ module InliningOracle
 
     attrs_list = [decl_attrs, defn_attrs].compact
 
+    # If you use __attribute__((gnu_inline)) for a function, make sure to use it
+    # on every declaration that has "inline" or "__inline__".  Failure to do so
+    # usually causes an error.
+    if decl_attrs && defn_attrs && decl_attrs.inline? && defn_attrs.inline? &&
+       decl_attrs.gnu_inline? != defn_attrs.gnu_inline? &&
+       !(!t.static_prototype? && t.static_definition? && !cpp)
+      if cpp
+        if t.gnu_inline_prototype?
+          style = :redeclared_without
+        else
+          style = :redeclared_with
+        end
+      else
+        style = :present
+      end
+      errors[:gnu_inline_inconsistent_error] = style
+      defn_attrs = nil
+    end
+
     # It is an error to use static and extern together on the same definition or
     # declaration.
     if attrs_list.any? { |a| a.static? && a.extern? }
@@ -178,24 +197,6 @@ module InliningOracle
     # is.  Note that "-std=gnu89" does support "inline".
     if language == :c89 && t.inline_keyword?
       return { inline_not_supported: true }.merge(warnings)
-    end
-
-    # If you use __attribute__((gnu_inline)) for a function, make sure to use it
-    # on every declaration that has "inline" or "__inline__".  Failure to do so
-    # usually causes an error.
-    if t.inline_prototype? && t.inline_definition? &&
-       t.gnu_inline_prototype? != t.gnu_inline_definition? &&
-       !(!t.static_prototype? && t.static_definition? && !cpp)
-      if cpp
-        if t.gnu_inline_prototype?
-          style = :redeclared_without
-        else
-          style = :redeclared_with
-        end
-      else
-        style = :present
-      end
-      return { gnu_inline_inconsistent_error: style }.merge(warnings)
     end
 
     if t.static_prototype? || t.static_definition?
