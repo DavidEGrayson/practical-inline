@@ -180,7 +180,6 @@ module InliningOracle
     if [:c99, :gnu99, :c11, :gnu11].include?(language)
       if disassociated && decl_attrs && decl_attrs.inline? && !decl_attrs.gnu_inline?
         warnings[:inline_never_defined_warning] = true
-        defn_attrs = nil
       end
     end
 
@@ -203,11 +202,11 @@ module InliningOracle
       return errors.merge(warnings)
     end
 
-    ############################# TODO: fix stuff below this line ################
-
-    if t.static_prototype? || t.static_definition?
+    if decl_attrs.static? || defn_attrs.static?
       return { use_inline_def: true }.merge(warnings)
     end
+
+    ############################# TODO: fix stuff below this line ################
 
     if [:c89, :gnu89].include?(language)
       extern_inline = (t.extern_prototype? || !t.inline_prototype?) && t.extern_definition? && t.inline_definition?
