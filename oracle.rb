@@ -157,7 +157,7 @@ module InliningOracle
 
     # It is an error to use static and extern together on the same definition or
     # declaration.
-    if attrs_list.any? { |a| a.static? && a.extern? }
+    if errors[:conflicting_specifiers_error]
     elsif !(decl_attrs && decl_attrs.static?) && (defn_attrs && defn_attrs.static?)
       if !static_mismatch_allowed?(inlining_type, compiler, language)
         style = cpp ? :extern : true
