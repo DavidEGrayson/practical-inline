@@ -218,6 +218,19 @@ module InliningOracle
       return { multiple_definition_error: true }.merge(warnings)
     end
 
+    if cpp
+      if !(decl_attrs.inline? || defn_attrs.inline?)
+        return { multiple_definition_error: true }.merge(warnings)
+      end
+
+      if no_optimization && !(decl_attrs.always_inline? || defn_attrs.always_inline?)
+        if defn_attrs.inline? && defn_attrs.gnu_inline?
+          return { undefined_reference_error: true }.merge(warnings)
+        end
+        return { link_once: true }.merge(warnings)
+      end
+    end
+
     ############################# TODO: fix stuff below this line ################
 
     if (language == :c99 || language == :gnu99 || \
@@ -255,19 +268,6 @@ module InliningOracle
         return { undefined_reference_error: true }.merge(warnings)
       else
         return { use_inline_def: true }.merge(warnings)
-      end
-    end
-
-    if cpp
-      if !t.inline_specified?
-        return { multiple_definition_error: true }.merge(warnings)
-      end
-
-      if no_optimization && !t.always_inline?
-        if t.inline_definition? && t.gnu_inline_definition?
-          return { undefined_reference_error: true }.merge(warnings)
-        end
-        return { link_once: true }.merge(warnings)
       end
     end
 
