@@ -80,24 +80,34 @@ module InliningOracle
       attrs.inline = true
     end
 
-    if qualifiers.include?('__attribute__((gnu_inline))')
-      if attrs.inline?
-        attrs.gnu_inline = true
-      else
-        warnings[:gnu_inline_ignored_warning] = true
-      end
-    end
-
-    if qualifiers.include?('__attribute__((always_inline))')
-      attrs.always_inline = true
-    end
-
     if qualifiers.include?('static')
       attrs.static = true
     end
 
     if qualifiers.include?('extern')
       attrs.extern = true
+    end
+
+    if attrs.static? && attrs.extern?
+      if cpp
+        errors[:conflicting_specifiers_error] = true
+      else
+        errors[:multiple_storage_classes_error] = true
+      end
+    end
+
+    if qualifiers.include?('__attribute__((gnu_inline))')
+      if attrs.inline?
+        attrs.gnu_inline = true
+      else
+        if !errors[:conflicting_specifiers_error]
+          warnings[:gnu_inline_ignored_warning] = true
+        end
+      end
+    end
+
+    if qualifiers.include?('__attribute__((always_inline))')
+      attrs.always_inline = true
     end
 
     if parse_fail
@@ -148,11 +158,6 @@ module InliningOracle
     # It is an error to use static and extern together on the same definition or
     # declaration.
     if attrs_list.any? { |a| a.static? && a.extern? }
-      if cpp
-        errors[:conflicting_specifiers_error] = true
-      else
-        errors[:multiple_storage_classes_error] = true
-      end
     elsif !(decl_attrs && decl_attrs.static?) && (defn_attrs && defn_attrs.static?)
       if !static_mismatch_allowed?(inlining_type, compiler, language)
         style = cpp ? :extern : true
@@ -187,19 +192,16 @@ module InliningOracle
       warnings[:always_inline_ignored_warning] = true
     end
 
+    #if attrs_list.any? { |a| !a.inline? && a.gnu_inline? } &&
+    #   !errors[:conflicting_specifiers_error]
+    #  warnings[:gnu_inline_ignored_warning] = true
+    #end
+
     if errors.size > 0
       return errors.merge(warnings)
     end
 
     ############################# TODO: fix stuff below this line ################
-
-    # If a declaration or definition has "__attribute__((gnu_inline))" or
-    # without "inline" or "__inline__", the attribute will be ignored and there
-    # will be a warning.
-    if (!t.inline_prototype? && t.gnu_inline_prototype?) ||
-       (!t.inline_definition? && t.gnu_inline_definition?)
-      warnings[:gnu_inline_ignored_warning] = true
-    end
 
     # The "inline" keyword is not supported in "-std=c89" mode, but "__inline__"
     # is.  Note that "-std=gnu89" does support "inline".
