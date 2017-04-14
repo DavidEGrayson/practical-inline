@@ -173,6 +173,9 @@ module InliningOracle
       #   [:c99, :gnu99, :c11, :gnu11].include?(language)
       #  warnings[:inline_never_defined_warning] = true
       #end
+
+      decl_attrs = nil
+      attrs_list = [defn_attrs]
     end
 
     if attrs_list.any?(&:always_inline?) && attrs_list.none?(&:inline?)
