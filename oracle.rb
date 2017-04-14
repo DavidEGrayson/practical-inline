@@ -190,6 +190,13 @@ module InliningOracle
     elsif attrs_list.any?(&:always_inline?) && attrs_list.none?(&:inline?)
       if !errors[:conflicting_specifiers_error]
         warnings[:always_inline_ignored_warning] = true
+      elsif cpp && !decl_attrs.inline? && decl_attrs.always_inline? &&
+            (!decl_attrs.static? || !decl_attrs.extern?) &&
+            defn_attrs.static? && defn_attrs.extern?
+        # The conflicting specifiers were about the definition, not the prototype,
+        # so we really do get the warning.  (need a better model for this warning,
+        # maybe add some separation between the treatment of the decl and defn)
+        warnings[:always_inline_ignored_warning] = true
       end
     end
 
