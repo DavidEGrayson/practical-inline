@@ -42,6 +42,9 @@ def test_inlining(specs, case_number, behavior_hash, behavior)
 
   script = construct_script(:call_in_two_files, *specs)
   result = run_script(script)
+
+  # TODO: these need to be separate ifs, not a case, because we are now predicting multiple errors
+  # This is getting annoying I guess.
   case
   when behavior[:inline_not_supported]
     expect_compiler_error(result, 'file1')

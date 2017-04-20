@@ -89,6 +89,7 @@ module InliningOracle
     end
 
     if attrs.static? && attrs.extern?
+      static_extern = true
       if cpp
         errors[:conflicting_specifiers_error] = true
       else
@@ -110,7 +111,21 @@ module InliningOracle
       attrs.always_inline = true
     end
 
-    if parse_fail
+    if attrs_list.any?(&:always_inline?) && attrs_list.none?(&:inline?)
+      if !errors[:conflicting_specifiers_error]
+        warnings[:always_inline_ignored_warning] = true
+      elsif cpp && !decl_attrs.inline? && decl_attrs.always_inline? &&
+            (!decl_attrs.static? || !decl_attrs.extern?) &&
+            defn_attrs.static? && defn_attrs.extern?
+        # The conflicting specifiers were about the definition, not the prototype,
+        # so we really do get the warning.  (need a better model for this warning,
+        # maybe add some separation between the treatment of the decl and defn)
+        warnings[:always_inline_ignored_warning] = true
+      end
+    end
+
+
+    if parse_fail || static_extern
       return nil
     end
 
@@ -185,17 +200,6 @@ module InliningOracle
 
     if disassociated
       if defn_attrs && defn_attrs.always_inline? && !defn_attrs.inline?
-        warnings[:always_inline_ignored_warning] = true
-      end
-    elsif attrs_list.any?(&:always_inline?) && attrs_list.none?(&:inline?)
-      if !errors[:conflicting_specifiers_error]
-        warnings[:always_inline_ignored_warning] = true
-      elsif cpp && !decl_attrs.inline? && decl_attrs.always_inline? &&
-            (!decl_attrs.static? || !decl_attrs.extern?) &&
-            defn_attrs.static? && defn_attrs.extern?
-        # The conflicting specifiers were about the definition, not the prototype,
-        # so we really do get the warning.  (need a better model for this warning,
-        # maybe add some separation between the treatment of the decl and defn)
         warnings[:always_inline_ignored_warning] = true
       end
     end
